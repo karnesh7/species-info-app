@@ -1,5 +1,5 @@
 import streamlit as st
-from services.api_inaturalist import identify_species
+from services.api_huggingface import classify_image
 from services.api_gbif import get_species_info
 from services.db_handler import fetch_from_cache, insert_into_cache
 
@@ -12,30 +12,34 @@ species_name = st.text_input("Or enter species name")
 
 # Inside your button click:
 if st.button("Search"):
+    category = None
+
     if image:
-        # Save image temp, or pass mock path
-        result = identify_species("mock_image_path.jpg")
-        species_name = result["scientific_name"]
-        category = result["category"]
+        image_bytes = image.read()
+        try:
+            labels = classify_image(image_bytes)
+            
+            if not labels:
+                st.warning("No labels detected in the image.")
+                st.stop()
+
+            st.write("Hugging Face model labels:")
+            for label in labels:
+                st.write(f"{label['label']} (score: {label['score']:.2f})")
+
+            # Use top label as species_name
+            species_name = labels[0]['label']
+            st.success(f"Top label selected: {species_name}")
+
+        except Exception as e:
+            st.error(f"Error during image analysis: {e}")
+            st.stop()
+
     elif species_name:
-        species_name = species_name
-        category = None
+        st.info(f"Using entered species name: {species_name}")
     else:
         st.warning("Please upload an image or enter a species name.")
         st.stop()
 
-    cached = fetch_from_cache(species_name)
-    if cached:
-        st.success(f"Found in cache: {cached}")
-    else:
-        st.info("Fetching from GBIF (mock)...")
-        gbif_info = get_species_info(species_name)
-        insert_into_cache({
-            "scientific_name": species_name,
-            "common_name": species_name,  # Mock for now
-            "category": category,
-            "taxonomy": gbif_info["taxonomy"],
-            "region": gbif_info["region"],
-            "extra_info": {}
-        })
-        st.write(gbif_info)
+    # Proceed with cache and GBIF lookup here
+    st.write(f"Fetching information for: *{species_name}*")
