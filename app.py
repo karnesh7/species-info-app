@@ -1,35 +1,62 @@
 import streamlit as st
-from services.api_huggingface import classify_image
+from services.api_huggingface import classify_bird, classify_general
+from services.api_plantnet import identify_plant
 from services.api_gbif import get_species_info
 from services.db_handler import fetch_from_cache, insert_into_cache
+from services.local_classifier import predict_category
 
 st.title("Species Identification App")
 st.write("Upload an image or enter a species name to get information!")
 
-# For now, just basic input placeholders
 image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 species_name = st.text_input("Or enter species name")
 
-# Inside your button click:
 if st.button("Search"):
     category = None
 
     if image:
         image_bytes = image.read()
+
         try:
-            labels = classify_image(image_bytes)
-            
-            if not labels:
-                st.warning("No labels detected in the image.")
-                st.stop()
+            # Step 1: Predict category
+            with st.spinner("Identifying species..."):
+                category_result = predict_category(image_bytes)
 
-            st.write("Hugging Face model labels:")
-            for label in labels:
-                st.write(f"{label['label']} (score: {label['score']:.2f})")
+            category = category_result["category"]
+            st.success(f"Predicted category: **{category}** (confidence: {category_result['confidence']:.2f})")
 
-            # Use top label as species_name
-            species_name = labels[0]['label']
-            st.success(f"Top label selected: {species_name}")
+            # Step 2: Route to appropriate classifier
+            if category == "Bird":
+                st.info("Using bird species classifier...")
+                labels = classify_bird(image_bytes)
+
+            elif category == "Plant":
+                st.info("Using Pl@ntNet for plant identification...")
+                result = identify_plant(image_bytes)
+                # Pl@ntNet returns complex structure
+                try:
+                    species_name = result["results"][0]["species"]["scientificNameWithoutAuthor"]
+                    st.success(f"Plant identified: {species_name}")
+                except:
+                    st.warning("Could not extract plant name.")
+                    st.stop()
+
+            else:
+                st.info("Using general classifier for other categories...")
+                labels = classify_general(image_bytes)
+
+            # Parse labels (for HF-based classifiers)
+            if category != "Plant":
+                if not labels:
+                    st.warning("No labels detected.")
+                    st.stop()
+
+                st.write("Model labels:")
+                for label in labels:
+                    st.write(f"{label['label']} (score: {label['score']:.2f})")
+
+                species_name = labels[0]['label']
+                st.success(f"Top label selected: {species_name}")
 
         except Exception as e:
             st.error(f"Error during image analysis: {e}")
@@ -41,5 +68,23 @@ if st.button("Search"):
         st.warning("Please upload an image or enter a species name.")
         st.stop()
 
-    # Proceed with cache and GBIF lookup here
+    species_name = species_name.strip()
+
+
+    # Proceed with cache and GBIF lookup
     st.write(f"Fetching information for: *{species_name}*")
+    cached = fetch_from_cache(species_name)
+    if cached:
+        st.success(f"Found in cache: {cached}")
+    else:
+        st.info("Fetching from GBIF...")
+        gbif_info = get_species_info(species_name)
+        insert_into_cache({
+            "scientific_name": species_name,
+            "common_name": species_name,
+            "category": category,
+            "taxonomy": gbif_info.get("taxonomy"),
+            "region": gbif_info.get("region"),
+            "extra_info": {}
+        })
+        st.write(gbif_info)
