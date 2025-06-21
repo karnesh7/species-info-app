@@ -4,7 +4,7 @@ from PIL import Image
 from io import BytesIO
 
 # Load the model only once
-interpreter = tf.lite.Interpreter(model_path="models/broad_category_classifier.tflite")
+interpreter = tf.lite.Interpreter(model_path="models/broad_category_classifier_2.tflite")
 interpreter.allocate_tensors()
 
 input_details = interpreter.get_input_details()
