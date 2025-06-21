@@ -2,7 +2,7 @@ import streamlit as st
 from services.api_huggingface import classify_bird, classify_general
 from services.api_plantnet import identify_plant
 from services.api_gbif import get_species_info
-from services.api_inaturalist import get_scientific_name_from_common
+from services.api_inaturalist import get_scientific_name_from_common, get_common_name
 from services.db_handler import fetch_from_cache, insert_into_cache
 from services.local_classifier import predict_category
 
@@ -77,6 +77,8 @@ if st.button("Search"):
         if mapped_name and mapped_name.lower() != species_name.lower():
             st.info(f"Mapped to scientific name: {mapped_name}")
             species_name = mapped_name
+    common_name = get_common_name(species_name) or species_name
+
 
     # Step 3: Check cache → GBIF
     st.write(f"Fetching information for: *{species_name}*")
@@ -87,8 +89,8 @@ if st.button("Search"):
         st.info("Fetching from GBIF...")
         gbif_info = get_species_info(species_name)
         insert_into_cache({
+            "common_name": common_name,
             "scientific_name": species_name,
-            "common_name": species_name,
             "category": category,
             "taxonomy": gbif_info.get("taxonomy"),
             "region": gbif_info.get("region"),
