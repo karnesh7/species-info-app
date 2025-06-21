@@ -2,6 +2,7 @@ import streamlit as st
 from services.api_huggingface import classify_bird, classify_general
 from services.api_plantnet import identify_plant
 from services.api_gbif import get_species_info
+from services.api_inaturalist import get_scientific_name_from_common
 from services.db_handler import fetch_from_cache, insert_into_cache
 from services.local_classifier import predict_category
 
@@ -33,7 +34,6 @@ if st.button("Search"):
             elif category == "Plant":
                 st.info("Using Pl@ntNet for plant identification...")
                 result = identify_plant(image_bytes)
-                # Pl@ntNet returns complex structure
                 try:
                     species_name = result["results"][0]["species"]["scientificNameWithoutAuthor"]
                     st.success(f"Plant identified: {species_name}")
@@ -55,6 +55,7 @@ if st.button("Search"):
                 for label in labels:
                     st.write(f"{label['label']} (score: {label['score']:.2f})")
 
+                # Extract last part after comma (likely scientific name or clean label)
                 species_name = labels[0]['label'].split(",")[-1].strip()
                 st.success(f"Top label selected: {species_name}")
 
@@ -70,8 +71,14 @@ if st.button("Search"):
 
     species_name = species_name.strip()
 
+    # For non-plant: Map to scientific name using iNaturalist if needed
+    if category != "Plant":
+        mapped_name = get_scientific_name_from_common(species_name)
+        if mapped_name and mapped_name.lower() != species_name.lower():
+            st.info(f"Mapped to scientific name: {mapped_name}")
+            species_name = mapped_name
 
-    # Proceed with cache and GBIF lookup
+    # Step 3: Check cache → GBIF
     st.write(f"Fetching information for: *{species_name}*")
     cached = fetch_from_cache(species_name)
     if cached:
