@@ -55,7 +55,7 @@ if st.button("Search"):
                 for label in labels:
                     st.write(f"{label['label']} (score: {label['score']:.2f})")
 
-                species_name = labels[0]['label']
+                species_name = labels[0]['label'].split(",")[-1].strip()
                 st.success(f"Top label selected: {species_name}")
 
         except Exception as e:
