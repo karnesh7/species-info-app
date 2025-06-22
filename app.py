@@ -83,17 +83,54 @@ if st.button("Search"):
     # Step 3: Check cache → GBIF
     st.write(f"Fetching information for: *{species_name}*")
     cached = fetch_from_cache(species_name)
+
     if cached:
-        st.success(f"Found in cache: {cached}")
+        st.success("Found in cache:")
+        st.write(cached)
     else:
         st.info("Fetching from GBIF...")
         gbif_info = get_species_info(species_name)
+
         insert_into_cache({
             "common_name": common_name,
             "scientific_name": species_name,
             "category": category,
             "taxonomy": gbif_info.get("taxonomy"),
-            "region": gbif_info.get("region"),
+            "regions": gbif_info.get("regions", []),
+            "synonyms": gbif_info.get("synonyms", []),
+            "habitats": gbif_info.get("habitats", []),
             "extra_info": {}
         })
-        st.write(gbif_info)
+
+        # Display info nicely
+        # Display Taxonomy
+        st.subheader("Taxonomy")
+        taxonomy = gbif_info.get("taxonomy", {})
+        if taxonomy and taxonomy != "Unknown":
+            st.json(taxonomy)
+        else:
+            st.write("Not available")
+
+        # Display Regions
+        st.subheader("Regions")
+        regions = gbif_info.get("regions", [])
+        if regions:
+            st.markdown("\n".join([f"- {region}" for region in regions]))
+        else:
+            st.write("Not available")
+
+        # Display Synonyms
+        st.subheader("Synonyms")
+        synonyms = gbif_info.get("synonyms", [])
+        if synonyms:
+            st.markdown("\n".join([f"- {name}" for name in synonyms]))
+        else:
+            st.write("None found")
+
+        # Display Habitats
+        st.subheader("Habitats")
+        habitats = gbif_info.get("habitats", [])
+        if habitats:
+            st.markdown("\n".join([f"- {habitat}" for habitat in habitats]))
+        else:
+            st.write("Not available")
