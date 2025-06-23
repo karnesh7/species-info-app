@@ -5,6 +5,7 @@ from services.api_gbif import get_species_info
 from services.api_inaturalist import get_scientific_name_from_common, get_common_name
 from services.db_handler import fetch_from_cache, insert_into_cache
 from services.local_classifier import predict_category
+from services.api_wikipedia import get_wikipedia_info
 
 st.title("Species Identification App")
 st.write("Upload an image or enter a species name to get information!")
@@ -98,7 +99,6 @@ if st.button("Search"):
             "taxonomy": gbif_info.get("taxonomy"),
             "regions": gbif_info.get("regions", []),
             "synonyms": gbif_info.get("synonyms", []),
-            "habitats": gbif_info.get("habitats", []),
             "extra_info": {}
         })
 
@@ -127,10 +127,25 @@ if st.button("Search"):
         else:
             st.write("None found")
 
-        # Display Habitats
-        st.subheader("Habitats")
-        habitats = gbif_info.get("habitats", [])
-        if habitats:
-            st.markdown("\n".join([f"- {habitat}" for habitat in habitats]))
+   # Step 4: Wikipedia Info
+    st.subheader("Wikipedia Description")
+    wiki_info = get_wikipedia_info(species_name)
+
+    if wiki_info["summary"] != "Not available":
+        st.write(wiki_info["summary"])
+
+        if wiki_info.get("image"):
+            st.image(wiki_info["image"], caption="Image from Wikipedia", width=400)
+
+        if wiki_info.get("sections"):
+            st.subheader("More Info (from Wikipedia)")
+            for heading, contents in wiki_info["sections"].items():
+                with st.expander(heading):
+                    st.markdown(contents)
         else:
-            st.write("Not available")
+            st.info("No additional sections found.")
+
+        if wiki_info["url"]:
+            st.markdown(f"[Read more on Wikipedia ↗]({wiki_info['url']})")
+    else:
+        st.write("Wikipedia information not available.")

@@ -13,8 +13,7 @@ def get_species_info(species_name):
             return {
                 "taxonomy": "Unknown",
                 "regions": [],
-                "synonyms": [],
-                "habitats": []
+                "synonyms": []
             }
 
         usage_key = match_data["usageKey"]
@@ -67,16 +66,10 @@ def get_species_info(species_name):
             if syn.get("scientificName")
         ]
 
-        # Step 5: Get habitat info (optional)
-        habitats = species_data.get("habitats", [])
-        if not habitats:
-            habitats = ["Not available"]
-
         return {
             "taxonomy": taxonomy,
             "regions": regions,
-            "synonyms": synonyms,
-            "habitats": habitats
+            "synonyms": synonyms
         }
 
     except Exception as e:
@@ -84,6 +77,5 @@ def get_species_info(species_name):
             "taxonomy": "Error fetching taxonomy",
             "regions": [],
             "synonyms": [],
-            "habitats": [],
             "error": str(e)
         }
