@@ -25,7 +25,13 @@ if st.button("Search"):
                 category_result = predict_category(image_bytes)
 
             category = category_result["category"]
-            st.success(f"Predicted category: **{category}** (confidence: {category_result['confidence']:.2f})")
+            confidence = category_result["confidence"]
+
+            st.success(f"Predicted category: **{category}** (confidence: {confidence:.2f})")
+
+            # Option 1: Warn if confidence is low
+            if confidence < 0.65:
+                st.warning("⚠️ The model's confidence is low. Please interpret results with caution.")
 
             # Step 2: Route to appropriate classifier
             if category == "Bird":
@@ -57,7 +63,13 @@ if st.button("Search"):
                     st.write(f"{label['label']} (score: {label['score']:.2f})")
 
                 # Extract last part after comma (likely scientific name or clean label)
-                species_name = labels[0]['label'].split(",")[-1].strip()
+                top_label = labels[0]['label'].split(",")[-1].strip()
+                top_score = labels[0]['score']
+
+                if top_score < 0.65:
+                    st.warning("⚠️ The top label confidence is low. Please verify the result carefully.")
+
+                species_name = top_label
                 st.success(f"Top label selected: {species_name}")
 
         except Exception as e:
