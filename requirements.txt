@@ -1,3 +1,9 @@
 requests
 streamlit
 sqlalchemy
+transformers
+torch
+Pillow
+wikipedia
+wikipedia-api
+python-dotenv

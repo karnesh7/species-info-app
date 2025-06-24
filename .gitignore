@@ -192,3 +192,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Ignore everything inside the model cache folder
+/models/hf_cache/*
+# But keep the folder itself by allowing a placeholder file
+!models/hf_cache/.gitkeep
