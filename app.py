@@ -80,17 +80,75 @@ if st.button("Search"):
             species_name = mapped_name
     common_name = get_common_name(species_name) or species_name
 
+    st.write(f"Fetching information for: *{species_name}*")
 
     # Step 3: Check cache → GBIF
-    st.write(f"Fetching information for: *{species_name}*")
     cached = fetch_from_cache(species_name)
 
     if cached:
         st.success("Found in cache:")
-        st.write(cached)
+        
+        # Taxonomy
+        st.subheader("Taxonomy")
+        taxonomy = cached.get("taxonomy", {})
+        if taxonomy:
+            st.markdown("\n".join([f"- **{k.capitalize()}**: {v}" for k, v in taxonomy.items()]))
+        else:
+            st.write("Not available")
+        
+        # Regions
+        st.subheader("Regions")
+        regions = cached.get("regions", [])
+        if regions:
+            st.markdown("\n".join([f"- {r}" for r in regions]))
+        else:
+            st.write("Not available")
+
+        # Synonyms
+        st.subheader("Synonyms")
+        synonyms = cached.get("synonyms", [])
+        if synonyms:
+            st.markdown("\n".join([f"- {s}" for s in synonyms]))
+        else:
+            st.write("None found")
+
+        # Habitats
+        st.subheader("Habitats")
+        habitats = cached.get("habitats", [])
+        if habitats:
+            st.markdown("\n".join([f"- {h}" for h in habitats]))
+        else:
+            st.write("Not available")
+
+        # Wikipedia Info
+        wiki_info = cached.get("wikipedia", {})
+        if wiki_info and wiki_info.get("summary"):
+            st.subheader("Wikipedia Description")
+            st.markdown(wiki_info["summary"])
+
+            if wiki_info.get("image"):
+                st.image(wiki_info["image"], caption="Image from Wikipedia", width=400)
+
+            if wiki_info.get("sections"):
+                st.subheader("More Info (from Wikipedia)")
+                for heading, contents in wiki_info["sections"].items():
+                    with st.expander(heading):
+                        st.markdown(contents)
+            else:
+                st.info("No additional sections found.")
+
+            if wiki_info.get("url"):
+                st.markdown(f"[Read more on Wikipedia ↗]({wiki_info['url']})")
+        else:
+            st.write("Wikipedia information not available.")
+        
+        st.caption(f"📦 Cached on: {cached.get('cached_at')}")
+
+
     else:
         st.info("Fetching from GBIF...")
         gbif_info = get_species_info(species_name)
+        wiki_info = get_wikipedia_info(species_name)
 
         insert_into_cache({
             "common_name": common_name,
@@ -99,7 +157,8 @@ if st.button("Search"):
             "taxonomy": gbif_info.get("taxonomy"),
             "regions": gbif_info.get("regions", []),
             "synonyms": gbif_info.get("synonyms", []),
-            "extra_info": {}
+            "extra_info": {},
+            "wikipedia": wiki_info
         })
 
         # Display info nicely
@@ -127,25 +186,24 @@ if st.button("Search"):
         else:
             st.write("None found")
 
-   # Step 4: Wikipedia Info
-    st.subheader("Wikipedia Description")
-    wiki_info = get_wikipedia_info(species_name)
+        # Step 4: Wikipedia Info
+        st.subheader("Wikipedia Description")
 
-    if wiki_info["summary"] != "Not available":
-        st.write(wiki_info["summary"])
+        if wiki_info["summary"] != "Not available":
+            st.write(wiki_info["summary"])
 
-        if wiki_info.get("image"):
-            st.image(wiki_info["image"], caption="Image from Wikipedia", width=400)
+            if wiki_info.get("image"):
+                st.image(wiki_info["image"], caption="Image from Wikipedia", width=400)
 
-        if wiki_info.get("sections"):
-            st.subheader("More Info (from Wikipedia)")
-            for heading, contents in wiki_info["sections"].items():
-                with st.expander(heading):
-                    st.markdown(contents)
+            if wiki_info.get("sections"):
+                st.subheader("More Info (from Wikipedia)")
+                for heading, contents in wiki_info["sections"].items():
+                    with st.expander(heading):
+                        st.markdown(contents)
+            else:
+                st.info("No additional sections found.")
+
+            if wiki_info["url"]:
+                st.markdown(f"[Read more on Wikipedia ↗]({wiki_info['url']})")
         else:
-            st.info("No additional sections found.")
-
-        if wiki_info["url"]:
-            st.markdown(f"[Read more on Wikipedia ↗]({wiki_info['url']})")
-    else:
-        st.write("Wikipedia information not available.")
+            st.write("Wikipedia information not available.")

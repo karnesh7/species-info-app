@@ -16,9 +16,11 @@ def init_db(db_path="db/species_cache.db"):
         synonyms_json TEXT,
         habitats_json TEXT,
         extra_info_json TEXT,
+        wikipedia_json TEXT,
         cached_at TEXT
     )
     ''')
+
     conn.commit()
     conn.close()
 
@@ -40,7 +42,8 @@ def fetch_from_cache(scientific_name, db_path="db/species_cache.db"):
             "synonyms": json.loads(row[6]),
             "habitats": json.loads(row[7]),
             "extra_info": json.loads(row[8]),
-            "cached_at": row[9]
+            "wikipedia": json.loads(row[9]),
+            "cached_at": row[10]
         }
 
     return None
@@ -51,8 +54,8 @@ def insert_into_cache(data, db_path="db/species_cache.db"):
     c = conn.cursor()
     c.execute('''
     INSERT INTO species_cache 
-    (scientific_name, common_name, category, taxonomy_json, regions_json, synonyms_json, habitats_json, extra_info_json, cached_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (scientific_name, common_name, category, taxonomy_json, regions_json, synonyms_json, habitats_json, extra_info_json, wikipedia_json, cached_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         data.get("scientific_name"),
         data.get("common_name"),
@@ -62,7 +65,9 @@ def insert_into_cache(data, db_path="db/species_cache.db"):
         json.dumps(data.get("synonyms", [])),
         json.dumps(data.get("habitats", [])),
         json.dumps(data.get("extra_info", {})),
+        json.dumps(data.get("wikipedia", {})),
         datetime.now().isoformat()
     ))
+
     conn.commit()
     conn.close()
