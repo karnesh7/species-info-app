@@ -7,3 +7,4 @@ Pillow
 wikipedia
 wikipedia-api
 python-dotenv
+tensorflow
