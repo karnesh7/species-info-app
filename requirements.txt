@@ -3,8 +3,8 @@ streamlit
 sqlalchemy
 transformers
 torch
+torchvision
 Pillow
 wikipedia
 wikipedia-api
 python-dotenv
-tensorflow

@@ -7,7 +7,7 @@ An intelligent Streamlit app that identifies species from images or text input u
 ## 🚀 Features
 
 * Image-based species identification using deep learning and APIs
-* Local TFLite model to predict broad categories (Bird, Plant, etc.)
+* Local PyTorch model to predict broad categories (Bird, Plant, etc.)
 * Uses HuggingFace models for birds and other animals
 * Uses Pl\@ntNet API for plant recognition
 * Auto-maps common/scientific names using iNaturalist
@@ -22,7 +22,7 @@ An intelligent Streamlit app that identifies species from images or text input u
 | Area      | Tools/Packages                            |
 | --------- | ----------------------------------------- |
 | Interface | [Streamlit](https://streamlit.io)         |
-| ML Models | TensorFlow Lite, HuggingFace Transformers |
+| ML Models | PyTorch Model, HuggingFace Transformers |
 | APIs      | Pl\@ntNet, iNaturalist, GBIF, Wikipedia   |
 | DB        | SQLite                                    |
 | Others    | Python, dotenv, PIL, Requests             |
@@ -71,7 +71,7 @@ species-id-app/
 ├── app.py                        Main Streamlit app
 ├── requirements.txt              Dependencies
 ├── .env                          API keys (excluded from Git)
-├── models/                       TFLite model + HF cache
+├── models/                       PyTorch model + HF cache
 ├── db/                           SQLite cache
 ├── tests/                        (Optional) Unit tests
 ├── services/
@@ -81,7 +81,7 @@ species-id-app/
 │   ├── api_inaturalist.py        Name mapping
 │   ├── api_wikipedia.py          Wikipedia enrichment
 │   ├── db_handler.py             SQLite cache handlers
-│   └── local_classifier.py       TFLite category classifier
+│   └── local_classifier.py       PyTorch category classifier
 ```
 
 ---
