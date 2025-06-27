@@ -3,8 +3,11 @@ streamlit
 sqlalchemy
 transformers
 torch
+numpy
 torchvision
 Pillow
 wikipedia
 wikipedia-api
 python-dotenv
+timm
+hf_xet
