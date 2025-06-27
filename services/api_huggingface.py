@@ -67,10 +67,9 @@ def classify_bird(image_bytes):
 import requests
 from dotenv import load_dotenv
 import os
+import streamlit as st
 
-load_dotenv()
-
-HF_TOKEN = os.getenv("HF_TOKEN")
+HF_TOKEN = st.secrets["HF_TOKEN"]
 
 def classify_bird(image_bytes):
     url = "https://router.huggingface.co/hf-inference/models/chriamue/bird-species-classifier"

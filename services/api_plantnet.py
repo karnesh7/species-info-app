@@ -1,10 +1,9 @@
 import requests
 from dotenv import load_dotenv
 import os
+import streamlit as st
 
-load_dotenv()
-
-PLANTNET_API_KEY = os.getenv("PLANTNET_API_KEY")
+PLANTNET_API_KEY = st.secrets["PLANTNET_API_KEY"]
 
 def identify_plant(image_bytes):
     if not PLANTNET_API_KEY:
