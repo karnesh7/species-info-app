@@ -86,6 +86,38 @@ species-id-app/
 
 ---
 
+## 🧠 Local Classifier Details
+
+The broad category classifier (Bird, Plant, Fish, etc.) is a lightweight PyTorch model trained to route images to the appropriate downstream pipeline.
+
+### 🏷️ Categories  
+- `Bird`, `Fish`, `Insect`, `Mammal`, `Plant`, `Reptile_Amphibian`
+
+### 🏗️ Architecture  
+- Based on a pretrained **EfficientNet-B0**
+- Fine-tuned on a curated dataset of ~3,000 images  
+- Exported as a PyTorch `.pt` model for fast and reliable inference
+
+### 📊 Training Metrics  
+| Metric         | Value (Final Epoch) |
+|----------------|---------------------|
+| Train Accuracy | ~98%                |
+| Val Accuracy   | ~96%                |
+| Train Loss     | 0.09                |
+| Val Loss       | 0.18                |
+
+### 📈 Accuracy & Loss Curves  
+
+<p align="center">
+  <img src="static/Accurcay_Loss.png" alt="Training and Validation Plot" width="400"/>
+</p>
+
+### 🔁 Reproducibility  
+You can retrain or fine-tune the classifier using the provided Colab notebook:  
+📓 [Train Local Classifier on Google Colab](https://colab.research.google.com/github/karnesh7/species-info-app/blob/main/notebooks/train_classifier.ipynb)
+
+---
+
 ## 🧪 Testing
 
 You can add simple unit tests in the `tests/` directory.
