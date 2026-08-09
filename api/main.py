@@ -2,13 +2,14 @@ import os
 import io
 import json
 import sqlite3
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from services.api_huggingface import classify_bird, classify_general
 from services.api_plantnet import identify_plant
@@ -18,6 +19,7 @@ from services.db_handler import fetch_from_cache, insert_into_cache, init_db
 from services.local_classifier import predict_category
 from services.api_wikipedia import get_wikipedia_info
 from services.explainability import generate_gradcam
+from services.report_generator import generate_markdown_dossier
 from api.schemas import (
     SpeciesDetailResponse,
     WikipediaInfo,
@@ -237,6 +239,22 @@ async def get_species_by_name(species_name: str):
         cached=data.get("cached", False),
         cached_at=data.get("cached_at"),
         source=data.get("source", "live")
+    )
+
+
+@app.get("/api/species/{name}/export", response_class=PlainTextResponse)
+async def export_species_report(name: str):
+    """
+    Exports a comprehensive biological field dossier in formatted Markdown.
+    """
+    clean_name = name.strip()
+    data = fetch_or_enrich_species(scientific_name=clean_name)
+    md_report = generate_markdown_dossier(data)
+    safe_filename = clean_name.replace(" ", "_").lower()
+    return PlainTextResponse(
+        content=md_report,
+        media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}_field_dossier.md"'}
     )
 
 

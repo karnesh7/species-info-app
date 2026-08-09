@@ -12,7 +12,9 @@ import {
   Maximize2,
   X,
   RotateCcw,
-  Sliders
+  Sliders,
+  Download,
+  FileText
 } from 'lucide-react';
 import TaxonomyTree from './TaxonomyTree';
 import ConfidenceMeter from './ConfidenceMeter';
@@ -20,6 +22,7 @@ import WikipediaViewer from './WikipediaViewer';
 import OccurrenceMap from './OccurrenceMap';
 import ExplainabilityViewer from './ExplainabilityViewer';
 import ConservationBadge from './ConservationBadge';
+import ExportDossierModal from './ExportDossierModal';
 
 const CATEGORY_META = [
   { id: 'Bird', label: 'Bird', sub: 'HuggingFace ViT', icon: <Bird size={14} /> },
@@ -41,6 +44,7 @@ const CATEGORY_ICONS = {
 
 export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUploadedImage, previewUrl, loading }) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   if (!data) return null;
 
@@ -210,11 +214,23 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
             <div className="dossier-scientific-name">{scientific_name}</div>
           </div>
 
-          {cached_at && (
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Cached on: {new Date(cached_at).toLocaleString()}
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn-outline"
+              style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', width: 'fit-content' }}
+              onClick={() => setIsExportOpen(true)}
+            >
+              <Download size={13} />
+              <span>Export Field Dossier</span>
+            </button>
+
+            {cached_at && (
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Cached on: {new Date(cached_at).toLocaleString()}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -298,6 +314,13 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
           </div>
         </div>
       )}
+
+      {/* Export Field Dossier Modal */}
+      <ExportDossierModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        data={data}
+      />
     </div>
   );
 }

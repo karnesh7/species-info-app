@@ -12,6 +12,7 @@ from services.db_handler import fetch_from_cache, insert_into_cache, init_db
 from services.local_classifier import predict_category
 from services.api_wikipedia import get_wikipedia_info
 from services.explainability import generate_gradcam
+from services.report_generator import generate_markdown_dossier
 
 # Initialize database
 init_db()
@@ -418,6 +419,16 @@ with col_output:
 
             if is_cached and species_data.get("cached_at"):
                 st.caption(f"Cached on: {species_data.get('cached_at')}")
+
+            # Export Field Dossier (.md) Download Button
+            md_content = generate_markdown_dossier(species_data)
+            st.download_button(
+                label="📥 Download Field Dossier (.md)",
+                data=md_content,
+                file_name=f"{target_species_name.replace(' ', '_').lower()}_field_dossier.md",
+                mime="text/markdown",
+                use_container_width=True
+            )
 
         # IUCN Conservation Banner
         if iucn and (iucn.get("code") or iucn.get("category")):
