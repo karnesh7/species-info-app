@@ -5,10 +5,15 @@ class ModelScore(BaseModel):
     label: str
     score: float
 
+class CategoryScore(BaseModel):
+    category: str
+    confidence: float
+
 class CategoryPrediction(BaseModel):
     category: str
     confidence: float
     is_low_confidence: bool = False
+    all_scores: List[CategoryScore] = []
 
 class WikipediaInfo(BaseModel):
     summary: Optional[str] = "Not available"
@@ -23,7 +28,9 @@ class SpeciesDetailResponse(BaseModel):
     confidence: Optional[float] = None
     category_confidence: Optional[float] = None
     is_low_confidence: bool = False
+    is_category_overridden: bool = False
     warning_message: Optional[str] = None
+    all_category_scores: List[CategoryScore] = []
     model_scores: List[ModelScore] = []
     taxonomy: Dict[str, Any] = {}
     regions: List[str] = []

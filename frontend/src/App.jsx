@@ -6,7 +6,8 @@ import {
   AlertCircle, 
   Layers, 
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Sliders
 } from 'lucide-react';
 
 import Header from './components/Header';
@@ -18,10 +19,21 @@ import HistoryModal from './components/HistoryModal';
 
 const API_BASE = ''; // Uses Vite proxy in development, direct paths in production
 
+const CATEGORY_OPTIONS = [
+  { id: '', label: '⚡ Auto-Detect (AI Router)' },
+  { id: 'Bird', label: '🐦 Bird' },
+  { id: 'Plant', label: '🌿 Plant' },
+  { id: 'Mammal', label: '🐾 Mammal' },
+  { id: 'Insect', label: '🐛 Insect' },
+  { id: 'Fish', label: '🐟 Fish' },
+  { id: 'Reptile_Amphibian', label: '🦎 Reptile / Amphibian' }
+];
+
 export default function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [speciesNameInput, setSpeciesNameInput] = useState('');
+  const [selectedCategoryRoute, setSelectedCategoryRoute] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -75,6 +87,7 @@ export default function App() {
     }
     setSelectedFile(null);
     setPreviewUrl(null);
+    setSelectedCategoryRoute('');
   };
 
   const animateSteps = (targetStep = 5) => {
@@ -87,20 +100,22 @@ export default function App() {
       } else {
         clearInterval(interval);
       }
-    }, 600);
+    }, 550);
     return interval;
   };
 
-  const handleIdentify = async (e) => {
+  const handleIdentify = async (e, categoryOverride = null) => {
     if (e) e.preventDefault();
     if (!selectedFile && !speciesNameInput.trim()) {
       setError('Please upload an image specimen or enter a species name to identify.');
       return;
     }
 
+    const effectiveCategory = categoryOverride || selectedCategoryRoute;
+
     setLoading(true);
     setError(null);
-    const stepTimer = animateSteps(selectedFile ? 5 : 4);
+    const stepTimer = animateSteps(selectedFile ? (effectiveCategory ? 4 : 5) : 4);
 
     try {
       const formData = new FormData();
@@ -109,6 +124,9 @@ export default function App() {
       }
       if (speciesNameInput.trim()) {
         formData.append('species_name', speciesNameInput.trim());
+      }
+      if (effectiveCategory) {
+        formData.append('category_override', effectiveCategory);
       }
 
       const response = await fetch(`${API_BASE}/api/identify`, {
@@ -125,6 +143,9 @@ export default function App() {
 
       setCurrentStep(6);
       setSpeciesData(result);
+      if (categoryOverride) {
+        setSelectedCategoryRoute(categoryOverride);
+      }
       fetchHistory(); // Refresh history cache
     } catch (err) {
       clearInterval(stepTimer);
@@ -223,6 +244,29 @@ export default function App() {
             disabled={loading}
           />
 
+          {/* Category Route Selection (Visible when image is uploaded) */}
+          {selectedFile && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                <Sliders size={13} style={{ color: 'var(--accent-mint)' }} />
+                <span>Category Routing Mode</span>
+              </div>
+              <select
+                className="search-input"
+                style={{ padding: '0.55rem 0.75rem', fontSize: '0.85rem' }}
+                value={selectedCategoryRoute}
+                onChange={(e) => setSelectedCategoryRoute(e.target.value)}
+                disabled={loading}
+              >
+                {CATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id} style={{ background: '#0c1410', color: '#f1f5f9' }}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="search-divider">Or Query By Taxonomy</div>
 
           {/* Text Input Form */}
@@ -244,7 +288,7 @@ export default function App() {
           <button
             type="button"
             className="btn-primary btn-full"
-            onClick={handleIdentify}
+            onClick={(e) => handleIdentify(e)}
             disabled={loading || (!selectedFile && !speciesNameInput.trim())}
           >
             {loading ? (
@@ -276,7 +320,12 @@ export default function App() {
         {/* Right: Output Dossier Area */}
         <main>
           {speciesData ? (
-            <SpeciesDossier data={speciesData} />
+            <SpeciesDossier 
+              data={speciesData} 
+              onReidentifyWithCategory={(cat) => handleIdentify(null, cat)}
+              hasUploadedImage={Boolean(selectedFile)}
+              loading={loading}
+            />
           ) : (
             <div className="glass-card empty-state">
               <div className="empty-icon">

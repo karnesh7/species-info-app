@@ -236,22 +236,25 @@ async def get_species_by_name(species_name: str):
 @app.post("/api/identify", response_model=SpeciesDetailResponse)
 async def identify_species(
     image: Optional[UploadFile] = File(None),
-    species_name: Optional[str] = Form(None)
+    species_name: Optional[str] = Form(None),
+    category_override: Optional[str] = Form(None)
 ):
     """
     Main identification pipeline endpoint:
-    1. Runs PyTorch Broad Category Classifier on uploaded image.
+    1. Runs PyTorch Broad Category Classifier on uploaded image (or uses category_override if provided).
     2. Routes to specialized model (HuggingFace Bird ViT, Pl@ntNet API, or General ViT).
     3. Resolves common / scientific names with iNaturalist.
     4. Retrieves structured taxonomy, occurrence regions, synonyms from GBIF.
     5. Retrieves descriptive encyclopedia data from Wikipedia.
-    6. Returns unified payload with confidence warnings and caching status.
+    6. Returns unified payload with confidence warnings, category scores, and caching status.
     """
     category = None
     category_confidence = None
     top_score = None
     is_low_confidence = False
+    is_category_overridden = False
     warning_messages = []
+    all_category_scores = []
     model_scores: List[ModelScore] = []
     target_species_name = None
 
@@ -264,14 +267,29 @@ async def identify_species(
 
             # Stage 1: Predict Broad Biological Category
             category_result = predict_category(image_bytes)
-            category = category_result["category"]
-            category_confidence = float(category_result["confidence"])
+            predicted_category = category_result["category"]
+            predicted_confidence = float(category_result["confidence"])
 
-            if category_confidence < 0.65:
-                is_low_confidence = True
-                warning_messages.append(
-                    f"Category prediction confidence is low ({category_confidence*100:.1f}%). Results may be approximate."
-                )
+            # Map all category scores
+            if "all_scores" in category_result:
+                all_category_scores = [
+                    {"category": s["category"], "confidence": float(s["confidence"])}
+                    for s in category_result["all_scores"]
+                ]
+
+            # Apply category override if user specified one
+            if category_override and category_override.strip() in ['Bird', 'Fish', 'Insect', 'Mammal', 'Plant', 'Reptile_Amphibian']:
+                category = category_override.strip()
+                category_confidence = 1.0
+                is_category_overridden = True
+            else:
+                category = predicted_category
+                category_confidence = predicted_confidence
+                if category_confidence < 0.65:
+                    is_low_confidence = True
+                    warning_messages.append(
+                        f"Category classifier confidence is low ({category_confidence*100:.1f}% for {category}). You can manually select the correct category below."
+                    )
 
             # Stage 2: Specialized Model Routing
             if category == "Bird":
@@ -361,7 +379,9 @@ async def identify_species(
         confidence=top_score,
         category_confidence=category_confidence,
         is_low_confidence=is_low_confidence,
+        is_category_overridden=is_category_overridden,
         warning_message=warning_text,
+        all_category_scores=all_category_scores,
         model_scores=model_scores,
         taxonomy=data.get("taxonomy") if isinstance(data.get("taxonomy"), dict) else {},
         regions=data.get("regions", []),

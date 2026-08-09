@@ -10,12 +10,23 @@ import {
   Database, 
   Clock, 
   Maximize2,
-  X
+  X,
+  RotateCcw,
+  Sliders
 } from 'lucide-react';
 import TaxonomyTree from './TaxonomyTree';
 import ConfidenceMeter from './ConfidenceMeter';
 import WikipediaViewer from './WikipediaViewer';
 import OccurrenceMap from './OccurrenceMap';
+
+const CATEGORY_META = [
+  { id: 'Bird', label: 'Bird', sub: 'HuggingFace ViT', icon: <Bird size={14} /> },
+  { id: 'Plant', label: 'Plant', sub: 'Pl@ntNet API', icon: <Leaf size={14} /> },
+  { id: 'Mammal', label: 'Mammal', sub: 'General ViT', icon: <Sparkles size={14} /> },
+  { id: 'Insect', label: 'Insect', sub: 'General ViT', icon: <Bug size={14} /> },
+  { id: 'Fish', label: 'Fish', sub: 'General ViT', icon: <Fish size={14} /> },
+  { id: 'Reptile_Amphibian', label: 'Reptile / Amphibian', sub: 'General ViT', icon: <ShieldCheck size={14} /> }
+];
 
 const CATEGORY_ICONS = {
   Bird: <Bird size={15} />,
@@ -26,7 +37,7 @@ const CATEGORY_ICONS = {
   Reptile_Amphibian: <ShieldCheck size={15} />
 };
 
-export default function SpeciesDossier({ data }) {
+export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUploadedImage, loading }) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   if (!data) return null;
@@ -38,7 +49,9 @@ export default function SpeciesDossier({ data }) {
     confidence,
     category_confidence,
     is_low_confidence,
+    is_category_overridden,
     warning_message,
+    all_category_scores,
     model_scores,
     taxonomy,
     regions,
@@ -53,12 +66,76 @@ export default function SpeciesDossier({ data }) {
 
   return (
     <div className="dossier-area">
-      {/* Low Confidence Warning Alert */}
+      {/* Low Confidence Warning Alert & Category Override Bar */}
       {is_low_confidence && warning_message && (
         <div className="alert-warning">
           <AlertTriangle size={20} />
           <div>
             <strong>Inference Advisory:</strong> {warning_message}
+          </div>
+        </div>
+      )}
+
+      {/* Manual Category Override Controls (Available when an image is uploaded) */}
+      {hasUploadedImage && (
+        <div className="glass-card" style={{ padding: '1.25rem 1.5rem', background: 'rgba(16, 185, 129, 0.04)', borderColor: is_low_confidence ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-emerald)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 600, color: is_low_confidence ? '#fde68a' : 'var(--text-primary)' }}>
+              <Sliders size={16} style={{ color: is_low_confidence ? 'var(--accent-amber)' : 'var(--accent-mint)' }} />
+              <span>{is_low_confidence ? 'Model Uncertain — Select Broad Category to Re-Route' : 'Manually Override Broad Category Route'}</span>
+            </div>
+            {is_category_overridden && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-mint)', fontWeight: 600 }}>
+                ✓ User Override Active
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '0.5rem' }}>
+            {CATEGORY_META.map((cat) => {
+              const isSelected = category === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => onReidentifyWithCategory(cat.id)}
+                  disabled={loading}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '0.55rem 0.75rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: isSelected ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                    background: isSelected ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-card-glass)',
+                    color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    transition: 'all var(--transition-fast)',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected && !loading) {
+                      e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected && !loading) {
+                      e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', fontWeight: 600 }}>
+                    {cat.icon}
+                    <span>{cat.label}</span>
+                  </div>
+                  <span style={{ fontSize: '0.68rem', color: isSelected ? 'var(--accent-mint)' : 'var(--text-muted)' }}>
+                    {cat.sub}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -130,7 +207,44 @@ export default function SpeciesDossier({ data }) {
         </div>
       </div>
 
-      {/* Model Predictions Meter (if image classification was used) */}
+      {/* Broad Category Distribution Meter (if multi-class scores exist) */}
+      {all_category_scores && all_category_scores.length > 0 && (
+        <div className="glass-card score-card">
+          <div className="score-title">
+            <Sliders size={18} style={{ color: 'var(--accent-mint)' }} />
+            <h3>PyTorch Broad Category Probabilities</h3>
+          </div>
+          <div className="score-list">
+            {all_category_scores.map((item, index) => {
+              const percentage = (item.confidence * 100).toFixed(1);
+              const isTop = index === 0;
+              return (
+                <div key={index} className="score-row">
+                  <div className="score-label-row">
+                    <span className="score-label-name" style={{ fontWeight: isTop ? 700 : 500, color: isTop ? 'var(--accent-mint)' : 'var(--text-primary)' }}>
+                      {item.category.replace('_', ' / ')} {isTop ? '(Top Model Pick)' : ''}
+                    </span>
+                    <span className="score-percentage">{percentage}%</span>
+                  </div>
+                  <div className="score-track">
+                    <div
+                      className="score-fill"
+                      style={{ 
+                        width: `${Math.max(item.confidence * 100, 2)}%`,
+                        background: isTop 
+                          ? 'linear-gradient(90deg, var(--accent-primary), var(--accent-mint))'
+                          : 'rgba(255, 255, 255, 0.25)'
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Species Candidate Predictions Meter (if image classification was used) */}
       {model_scores && model_scores.length > 0 && (
         <ConfidenceMeter scores={model_scores} />
       )}

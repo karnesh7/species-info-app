@@ -11,6 +11,11 @@ st.title("Species Identification App")
 st.write("Upload an image or enter a species name to get information!")
 
 image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+category_override = st.selectbox(
+    "Category Routing (Optional manual override):",
+    options=["Auto-Detect (PyTorch Classifier)", "Bird", "Plant", "Mammal", "Insect", "Fish", "Reptile_Amphibian"],
+    index=0
+)
 species_name = st.text_input("Or enter species name")
 
 if st.button("Search"):
@@ -20,18 +25,23 @@ if st.button("Search"):
         image_bytes = image.read()
 
         try:
-            # Step 1: Predict category
-            with st.spinner("Identifying species..."):
-                category_result = predict_category(image_bytes)
+            # Step 1: Predict category or use manual override
+            if category_override != "Auto-Detect (PyTorch Classifier)":
+                category = category_override
+                confidence = 1.0
+                st.info(f"Using manual category override: **{category}**")
+            else:
+                with st.spinner("Identifying species category..."):
+                    category_result = predict_category(image_bytes)
 
-            category = category_result["category"]
-            confidence = category_result["confidence"]
+                category = category_result["category"]
+                confidence = category_result["confidence"]
 
-            st.success(f"Predicted category: **{category}** (confidence: {confidence:.2f})")
+                st.success(f"Predicted category: **{category}** (confidence: {confidence:.2f})")
 
-            # Option 1: Warn if confidence is low
-            if confidence < 0.65:
-                st.warning("⚠️ The model's confidence is low. Please interpret results with caution.")
+                # Option 1: Warn if confidence is low
+                if confidence < 0.65:
+                    st.warning("⚠️ The model's confidence is low. You can select a broad category override above if the prediction is incorrect.")
 
             # Step 2: Route to appropriate classifier
             if category == "Bird":

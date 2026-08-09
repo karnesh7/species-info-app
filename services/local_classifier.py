@@ -31,10 +31,18 @@ def predict_category(image_bytes):
     predicted_index = torch.argmax(probs).item()
     confidence = probs[predicted_index].item()
 
+    all_scores = [
+        {"category": CATEGORIES[i], "confidence": float(probs[i].item())}
+        for i in range(len(CATEGORIES))
+    ]
+    all_scores.sort(key=lambda x: x["confidence"], reverse=True)
+
     return {
         "category": CATEGORIES[predicted_index],
-        "confidence": confidence
+        "confidence": confidence,
+        "all_scores": all_scores
     }
+
 
 # Using TFLite model:
 '''
