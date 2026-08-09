@@ -408,9 +408,17 @@ with col_output:
                 badge_html += f"<span class='custom-badge'>🏷️ {category or species_data.get('category')}</span>"
             if category_confidence:
                 badge_html += f"<span class='custom-badge'>🎯 Conf: {int(category_confidence*100)}%</span>"
-            if iucn and iucn.get("code"):
-                iucn_code = iucn.get("code")
-                badge_html += f"<span class='custom-badge' style='background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3);'>🛡️ IUCN: {iucn_code}</span>"
+            if iucn and (iucn.get("code") or iucn.get("category")):
+                iucn_code = (iucn.get("code") or "").upper()
+                if iucn_code in ["CR", "EN"]:
+                    iucn_style = "background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3);"
+                elif iucn_code in ["VU", "NT"]:
+                    iucn_style = "background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);"
+                elif iucn_code == "LC":
+                    iucn_style = "background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);"
+                else:
+                    iucn_style = "background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.3);"
+                badge_html += f"<span class='custom-badge' style='{iucn_style}'>🛡️ IUCN: {iucn.get('code') or iucn.get('category')}</span>"
             if is_cached:
                 badge_html += f"<span class='custom-badge cache-badge'>⚡ SQLite Cached</span>"
             else:
@@ -432,10 +440,10 @@ with col_output:
 
         # IUCN Conservation Banner
         if iucn and (iucn.get("code") or iucn.get("category")):
-            code = iucn.get("code", "")
+            code = (iucn.get("code") or "").upper()
             cat_name = iucn.get("category", "")
             url = iucn.get("iucn_url")
-            color = "#ef4444" if code in ["CR", "EN"] else ("#f59e0b" if code in ["VU", "NT"] else "#10b981")
+            color = "#ef4444" if code in ["CR", "EN"] else ("#f59e0b" if code in ["VU", "NT"] else ("#10b981" if code == "LC" else "#94a3b8"))
             url_link = f" — <a href='{url}' target='_blank' style='color: #38bdf8;'>View IUCN Dossier ↗</a>" if url else ""
             st.markdown(f"""
             <div style="background: rgba(255, 255, 255, 0.03); border-left: 4px solid {color}; padding: 0.75rem 1rem; border-radius: 8px; margin: 1rem 0;">

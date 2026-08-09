@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert, ShieldCheck, Shield, ExternalLink, AlertOctagon } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Shield, ExternalLink, HelpCircle } from 'lucide-react';
 
 const IUCN_TIERS = [
   { code: 'EX', label: 'Extinct', color: '#475569', bg: 'rgba(71, 85, 105, 0.25)', border: '#64748b' },
@@ -8,7 +8,9 @@ const IUCN_TIERS = [
   { code: 'EN', label: 'Endangered', color: '#f43f5e', bg: 'rgba(244, 63, 94, 0.25)', border: '#fb7185' },
   { code: 'VU', label: 'Vulnerable', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.25)', border: '#fbbf24' },
   { code: 'NT', label: 'Near Threatened', color: '#eab308', bg: 'rgba(234, 179, 8, 0.2)', border: '#fde047' },
-  { code: 'LC', label: 'Least Concern', color: '#10b981', bg: 'rgba(16, 185, 129, 0.2)', border: '#34d399' }
+  { code: 'LC', label: 'Least Concern', color: '#10b981', bg: 'rgba(16, 185, 129, 0.2)', border: '#34d399' },
+  { code: 'DD', label: 'Data Deficient', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.2)', border: '#cbd5e1' },
+  { code: 'NE', label: 'Not Evaluated', color: '#64748b', bg: 'rgba(100, 116, 139, 0.2)', border: '#94a3b8' }
 ];
 
 export default function ConservationBadge({ iucnStatus }) {
@@ -16,21 +18,31 @@ export default function ConservationBadge({ iucnStatus }) {
     return null;
   }
 
-  const rawCode = (iucnStatus.code || '').toUpperCase();
-  const rawCat = (iucnStatus.category || '').toUpperCase();
+  const rawCode = (iucnStatus.code || '').trim().toUpperCase();
+  const rawCat = (iucnStatus.category || '').trim().toUpperCase();
 
-  // Match active tier
-  const activeTier = IUCN_TIERS.find(
-    (t) => t.code === rawCode || rawCat.includes(t.code) || rawCat === t.label.toUpperCase().replace(/\s+/g, '_')
-  ) || {
-    code: rawCode || 'VU',
-    label: iucnStatus.category || 'Threatened',
-    color: '#f59e0b',
-    bg: 'rgba(245, 158, 11, 0.2)',
-    border: '#fbbf24'
+  // Normalize string for exact token matching
+  const normalize = (str) => (str || '').toUpperCase().replace(/[^A-Z]/g, '');
+
+  // Exact matching algorithm to prevent substring false matches (e.g. DATA_DEFICIENT matching EN)
+  const activeTier = IUCN_TIERS.find((t) => {
+    if (rawCode && t.code === rawCode) return true;
+    if (rawCat) {
+      const normCat = normalize(rawCat);
+      const normLabel = normalize(t.label);
+      return normCat === normLabel || normCat === t.code;
+    }
+    return false;
+  }) || {
+    code: rawCode || 'DD',
+    label: iucnStatus.category || 'Data Deficient',
+    color: '#94a3b8',
+    bg: 'rgba(148, 163, 184, 0.2)',
+    border: '#cbd5e1'
   };
 
   const isThreatened = ['CR', 'EN', 'VU', 'EW', 'EX'].includes(activeTier.code);
+  const isDataDeficient = ['DD', 'NE'].includes(activeTier.code);
 
   return (
     <div className="glass-card" style={{ padding: '1.25rem', marginBottom: '1.5rem', border: `1px solid ${activeTier.border}44` }}>
@@ -47,7 +59,7 @@ export default function ConservationBadge({ iucnStatus }) {
               border: `1px solid ${activeTier.border}`
             }}
           >
-            {isThreatened ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
+            {isThreatened ? <ShieldAlert size={18} /> : isDataDeficient ? <HelpCircle size={18} /> : <ShieldCheck size={18} />}
           </div>
           <div>
             <h3 style={{ fontSize: '1.05rem', margin: 0 }}>IUCN Red List Conservation Status</h3>
@@ -72,7 +84,7 @@ export default function ConservationBadge({ iucnStatus }) {
       </div>
 
       {/* Spectrum Meter Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.4rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '0.35rem', marginBottom: '1rem' }}>
         {IUCN_TIERS.map((tier) => {
           const isActive = tier.code === activeTier.code;
           return (
@@ -82,7 +94,7 @@ export default function ConservationBadge({ iucnStatus }) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                padding: '0.5rem 0.2rem',
+                padding: '0.45rem 0.15rem',
                 borderRadius: '8px',
                 background: isActive ? tier.bg : 'rgba(255, 255, 255, 0.02)',
                 border: `1px solid ${isActive ? tier.border : 'rgba(255, 255, 255, 0.06)'}`,
@@ -92,10 +104,10 @@ export default function ConservationBadge({ iucnStatus }) {
                 textAlign: 'center'
               }}
             >
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: isActive ? tier.color : 'var(--text-muted)' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: isActive ? tier.color : 'var(--text-muted)' }}>
                 {tier.code}
               </span>
-              <span style={{ fontSize: '0.62rem', color: isActive ? '#ffffff' : 'var(--text-muted)', marginTop: '2px', display: 'block', lineHeight: 1.1 }}>
+              <span style={{ fontSize: '0.58rem', color: isActive ? '#ffffff' : 'var(--text-muted)', marginTop: '2px', display: 'block', lineHeight: 1.1 }}>
                 {tier.label}
               </span>
             </div>
@@ -121,7 +133,7 @@ export default function ConservationBadge({ iucnStatus }) {
           Status: {activeTier.label} ({activeTier.code})
         </span>
         <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-          • Assessed on the IUCN Red List of Threatened Species.
+          • Official assessment on the IUCN Red List of Threatened Species.
         </span>
       </div>
     </div>

@@ -190,9 +190,34 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
               </span>
             )}
 
-            {iucn_status && iucn_status.code && (
-              <span className="badge-category" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                <span>IUCN: {iucn_status.code}</span>
+            {iucn_status && (iucn_status.code || iucn_status.category) && (
+              <span
+                className="badge-category"
+                style={{
+                  background: ['CR', 'EN'].includes((iucn_status.code || '').toUpperCase())
+                    ? 'rgba(239, 68, 68, 0.15)'
+                    : ['VU', 'NT'].includes((iucn_status.code || '').toUpperCase())
+                    ? 'rgba(245, 158, 11, 0.15)'
+                    : (iucn_status.code || '').toUpperCase() === 'LC'
+                    ? 'rgba(16, 185, 129, 0.15)'
+                    : 'rgba(148, 163, 184, 0.15)',
+                  color: ['CR', 'EN'].includes((iucn_status.code || '').toUpperCase())
+                    ? '#f87171'
+                    : ['VU', 'NT'].includes((iucn_status.code || '').toUpperCase())
+                    ? '#fbbf24'
+                    : (iucn_status.code || '').toUpperCase() === 'LC'
+                    ? '#34d399'
+                    : '#cbd5e1',
+                  borderColor: ['CR', 'EN'].includes((iucn_status.code || '').toUpperCase())
+                    ? 'rgba(239, 68, 68, 0.3)'
+                    : ['VU', 'NT'].includes((iucn_status.code || '').toUpperCase())
+                    ? 'rgba(245, 158, 11, 0.3)'
+                    : (iucn_status.code || '').toUpperCase() === 'LC'
+                    ? 'rgba(16, 185, 129, 0.3)'
+                    : 'rgba(148, 163, 184, 0.3)'
+                }}
+              >
+                <span>IUCN: {iucn_status.code || iucn_status.category}</span>
               </span>
             )}
 
