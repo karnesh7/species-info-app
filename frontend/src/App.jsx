@@ -324,6 +324,7 @@ export default function App() {
               data={speciesData} 
               onReidentifyWithCategory={(cat) => handleIdentify(null, cat)}
               hasUploadedImage={Boolean(selectedFile)}
+              previewUrl={previewUrl}
               loading={loading}
             />
           ) : (

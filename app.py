@@ -11,6 +11,7 @@ from services.api_inaturalist import get_scientific_name_from_common, get_common
 from services.db_handler import fetch_from_cache, insert_into_cache, init_db
 from services.local_classifier import predict_category
 from services.api_wikipedia import get_wikipedia_info
+from services.explainability import generate_gradcam
 
 # Initialize database
 init_db()
@@ -251,6 +252,7 @@ with col_output:
         warning_msg = None
         model_scores = []
         all_category_scores = []
+        cam_data = None
         target_species_name = ""
 
         # Case 1: Image Uploaded
@@ -318,6 +320,14 @@ with col_output:
 
                     # Stage 4: Biodiversity & Encyclopedia Enrichment
                     st.write("4️⃣ Ingesting GBIF taxonomy and Wikipedia encyclopedia...")
+
+                    # Stage 5: Visual Explainability
+                    st.write("5️⃣ Computing Grad-CAM visual attention heatmap...")
+                    try:
+                        cam_data = generate_gradcam(image_bytes, target_category=category)
+                    except Exception as ce:
+                        print(f"[GRAD-CAM STREAMLIT ERROR] {ce}")
+
                     status.update(label="✅ Pipeline execution complete!", state="complete", expanded=False)
 
                 except Exception as e:
@@ -418,6 +428,18 @@ with col_output:
                     conf = float(s["confidence"])
                     st.write(f"**{s['category'].replace('_', ' / ')}**: {conf*100:.1f}%")
                     st.progress(conf)
+
+        # AI Visual Explainability (Grad-CAM)
+        if cam_data:
+            with st.expander("🧠 AI Visual Explainability (Grad-CAM Attention Heatmap)", expanded=True):
+                st.caption(cam_data["description"])
+                col_cam1, col_cam2 = st.columns(2)
+                with col_cam1:
+                    st.image(cam_data["overlay_image"], caption="Grad-CAM Activation Overlay (ConvHead Layer)", use_container_width=True)
+                with col_cam2:
+                    st.image(cam_data["heatmap_image"], caption="Raw Attention Heatmap Mask", use_container_width=True)
+                st.info("💡 **How to interpret:** Warm red/yellow zones indicate the most discriminative biological features (e.g. beak, wing markings, petal structure) identified by the convolutional neural network.")
+
 
         # Taxonomy Cards (GBIF)
         taxonomy = species_data.get("taxonomy", {})

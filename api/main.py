@@ -17,9 +17,11 @@ from services.api_inaturalist import get_scientific_name_from_common, get_common
 from services.db_handler import fetch_from_cache, insert_into_cache, init_db
 from services.local_classifier import predict_category
 from services.api_wikipedia import get_wikipedia_info
+from services.explainability import generate_gradcam
 from api.schemas import (
     SpeciesDetailResponse,
     WikipediaInfo,
+    ExplainabilityInfo,
     ModelScore,
     SampleSpeciesItem,
     HistoryItem,
@@ -370,6 +372,21 @@ async def identify_species(
         sections=wiki_data.get("sections", {})
     )
 
+    # Stage 6: Visual Model Explainability (Grad-CAM)
+    explainability_data = None
+    if image is not None and image_bytes:
+        try:
+            cam_res = generate_gradcam(image_bytes, target_category=category)
+            explainability_data = ExplainabilityInfo(
+                overlay_image=cam_res["overlay_image"],
+                heatmap_image=cam_res["heatmap_image"],
+                target_category=cam_res["target_category"],
+                confidence=cam_res["confidence"],
+                description=cam_res["description"]
+            )
+        except Exception as e:
+            print(f"[GRAD-CAM EXPLAINABILITY ERROR] {e}")
+
     warning_text = " | ".join(warning_messages) if warning_messages else None
 
     return SpeciesDetailResponse(
@@ -383,6 +400,7 @@ async def identify_species(
         warning_message=warning_text,
         all_category_scores=all_category_scores,
         model_scores=model_scores,
+        explainability=explainability_data,
         taxonomy=data.get("taxonomy") if isinstance(data.get("taxonomy"), dict) else {},
         regions=data.get("regions", []),
         synonyms=data.get("synonyms", []),

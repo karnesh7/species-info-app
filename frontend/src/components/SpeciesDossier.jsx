@@ -18,6 +18,7 @@ import TaxonomyTree from './TaxonomyTree';
 import ConfidenceMeter from './ConfidenceMeter';
 import WikipediaViewer from './WikipediaViewer';
 import OccurrenceMap from './OccurrenceMap';
+import ExplainabilityViewer from './ExplainabilityViewer';
 
 const CATEGORY_META = [
   { id: 'Bird', label: 'Bird', sub: 'HuggingFace ViT', icon: <Bird size={14} /> },
@@ -37,7 +38,7 @@ const CATEGORY_ICONS = {
   Reptile_Amphibian: <ShieldCheck size={15} />
 };
 
-export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUploadedImage, loading }) {
+export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUploadedImage, previewUrl, loading }) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   if (!data) return null;
@@ -53,6 +54,7 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
     warning_message,
     all_category_scores,
     model_scores,
+    explainability,
     taxonomy,
     regions,
     synonyms,
@@ -206,6 +208,11 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
           )}
         </div>
       </div>
+
+      {/* AI Visual Explainability (Grad-CAM Attention Heatmap) */}
+      {explainability && (
+        <ExplainabilityViewer explainability={explainability} originalImage={previewUrl} />
+      )}
 
       {/* Broad Category Distribution Meter (if multi-class scores exist) */}
       {all_category_scores && all_category_scores.length > 0 && (

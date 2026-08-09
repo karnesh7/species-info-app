@@ -21,6 +21,20 @@ class WikipediaInfo(BaseModel):
     url: Optional[str] = None
     sections: Dict[str, str] = {}
 
+class ExplainabilityInfo(BaseModel):
+    overlay_image: str
+    heatmap_image: str
+    target_category: str
+    confidence: float
+    description: str
+
+class OccurrencePoint(BaseModel):
+    lat: float
+    lng: float
+    country: Optional[str] = None
+    year: Optional[int] = None
+    locality: Optional[str] = None
+
 class SpeciesDetailResponse(BaseModel):
     common_name: str
     scientific_name: str
@@ -32,8 +46,10 @@ class SpeciesDetailResponse(BaseModel):
     warning_message: Optional[str] = None
     all_category_scores: List[CategoryScore] = []
     model_scores: List[ModelScore] = []
+    explainability: Optional[ExplainabilityInfo] = None
     taxonomy: Dict[str, Any] = {}
     regions: List[str] = []
+    coordinates: List[OccurrencePoint] = []
     synonyms: List[str] = []
     habitats: List[str] = []
     wikipedia: WikipediaInfo
