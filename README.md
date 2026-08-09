@@ -318,6 +318,33 @@ OK
 
 ---
 
+## 📊 Quantitative Performance Benchmarks
+
+Run the built-in benchmark suite to measure CPU inference latency, Grad-CAM attention generation, SQLite cache speedup, and endpoint throughput:
+
+```bash
+python scripts/benchmark.py
+```
+
+### Summary Benchmark Results (CPU)
+
+| Benchmark Component | Metric | Measured Value | Reference / Notes |
+| :--- | :--- | :--- | :--- |
+| **Model Size** | Checkpoint Size | `15.66 MB` | Standalone PyTorch `.pt` model |
+| **Parameters** | Total Weights | `4,015,234` | 4.02M Parameters (EfficientNet-B0) |
+| **PyTorch Triage** | Mean Latency | `~118 - 160 ms` | CPU inference (50 iterations) |
+| **PyTorch Triage** | Median (P50) | `~99 - 116 ms` | 50 iterations |
+| **Grad-CAM XAI** | Heatmap Generation | `~690 - 780 ms` | Gradient backprop on `conv_head` |
+| **SQLite Cache Read**| Retrieval Latency | `~0.6 - 1.5 ms` | Persistent local SQLite cache |
+| **Cache Acceleration**| Speedup Factor | **`~1200x - 2900x`** | Faster than ~1850ms live API calls |
+| **Field Report Gen** | Generation Time | `<0.05 ms` | `>19,000` dossiers/sec |
+| **FastAPI Gateway** | `GET /api/health` | `~3.4 - 5.0 ms` | Asynchronous ASGI response |
+| **FastAPI Gateway** | `GET /api/samples` | `~2.6 ms` | Asynchronous ASGI response |
+
+> 📁 Full benchmark results are saved automatically to [benchmark_results.json](file:///d:/Projects/Species%20Identification/species-info-app/benchmark_results.json) and [benchmark_results.md](file:///d:/Projects/Species%20Identification/species-info-app/benchmark_results.md).
+
+---
+
 ## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).

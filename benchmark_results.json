@@ -1,0 +1,49 @@
+{
+  "benchmark_metadata": {
+    "timestamp": "2026-08-09T23:32:22.905106",
+    "device": "CPU",
+    "pytorch_version": "2.13.0+cpu",
+    "model_architecture": "EfficientNet-B0 (Broad Category Classifier)"
+  },
+  "metrics": {
+    "model_footprint": {
+      "total_parameters": 4015234,
+      "trainable_parameters": 2090646,
+      "model_file_size_mb": 15.66
+    },
+    "pytorch_classifier_latency_ms": {
+      "mean": 162.25,
+      "median_p50": 116.94,
+      "p90": 332.02,
+      "p99": 534.34,
+      "min": 94.58,
+      "max": 534.34,
+      "std_dev": 96.75,
+      "throughput_fps": 6.2
+    },
+    "gradcam_generation_latency_ms": {
+      "mean": 788.67,
+      "median_p50": 657.27,
+      "p90": 1284.97,
+      "p99": 1671.28,
+      "std_dev": 352.61
+    },
+    "sqlite_cache": {
+      "mean_read_latency_ms": 1.546,
+      "median_read_latency_ms": 1.181,
+      "min_latency_ms": 0.66,
+      "max_latency_ms": 5.864,
+      "estimated_live_api_latency_ms": 1850.0,
+      "speedup_factor": "1196.7x"
+    },
+    "dossier_generator_latency_ms": {
+      "mean": 0.0505,
+      "median": 0.0422,
+      "throughput_ops_per_sec": 19800
+    },
+    "fastapi_endpoints_latency_ms": {
+      "api_health_mean_ms": 3.41,
+      "api_samples_mean_ms": 2.62
+    }
+  }
+}
