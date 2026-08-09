@@ -56,7 +56,27 @@ def get_species_info(species_name):
                 if record.get("country")
             })
 
-        # Step 4: Get synonyms
+        # Step 4: Get georeferenced observation coordinates for interactive map
+        coordinates = []
+        try:
+            coord_url = f"https://api.gbif.org/v1/occurrence/search?taxonKey={usage_key}&hasCoordinate=true&limit=40"
+            coord_response = requests.get(coord_url, timeout=10)
+            if coord_response.status_code == 200:
+                for rec in coord_response.json().get("results", []):
+                    lat = rec.get("decimalLatitude")
+                    lng = rec.get("decimalLongitude")
+                    if lat is not None and lng is not None:
+                        coordinates.append({
+                            "lat": float(lat),
+                            "lng": float(lng),
+                            "country": rec.get("country", "Unknown"),
+                            "year": rec.get("year"),
+                            "locality": rec.get("locality") or rec.get("stateProvince") or rec.get("country", "")
+                        })
+        except Exception as ce:
+            print(f"[GBIF COORDINATES ERROR] {ce}")
+
+        # Step 5: Get synonyms
         syn_response = requests.get(f"https://api.gbif.org/v1/species/{usage_key}/synonyms")
         syn_response.raise_for_status()
         synonyms_data = syn_response.json()
@@ -69,6 +89,7 @@ def get_species_info(species_name):
         return {
             "taxonomy": taxonomy,
             "regions": regions,
+            "coordinates": coordinates,
             "synonyms": synonyms
         }
 
@@ -76,6 +97,7 @@ def get_species_info(species_name):
         return {
             "taxonomy": "Error fetching taxonomy",
             "regions": [],
+            "coordinates": [],
             "synonyms": [],
             "error": str(e)
         }

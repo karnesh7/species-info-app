@@ -368,6 +368,7 @@ with col_output:
                 "category": category,
                 "taxonomy": gbif_info.get("taxonomy") if gbif_info.get("taxonomy") != "Unknown" else {},
                 "regions": gbif_info.get("regions", []),
+                "coordinates": gbif_info.get("coordinates", []),
                 "synonyms": gbif_info.get("synonyms", []),
                 "habitats": [],
                 "extra_info": {},
@@ -471,6 +472,19 @@ with col_output:
 
             if wiki.get("url"):
                 st.markdown(f"[Read complete article on Wikipedia ↗]({wiki['url']})")
+
+        # Global Specimen Sightings Map (GBIF Coordinates)
+        coordinates = species_data.get("coordinates", [])
+        if coordinates:
+            st.markdown("#### 🌍 Global Specimen Sightings Map (GBIF)")
+            import pandas as pd
+            df_coords = pd.DataFrame([
+                {"latitude": pt["lat"], "longitude": pt["lng"]}
+                for pt in coordinates if "lat" in pt and "lng" in pt
+            ])
+            if not df_coords.empty:
+                st.map(df_coords, zoom=1)
+                st.caption(f"📍 Plotted {len(df_coords)} georeferenced observation records from GBIF occurrences.")
 
         # Occurrence Regions & Synonyms
         regions = species_data.get("regions", [])

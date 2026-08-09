@@ -57,6 +57,7 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
     explainability,
     taxonomy,
     regions,
+    coordinates,
     synonyms,
     wikipedia,
     cached,
@@ -262,8 +263,8 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
       {/* Wikipedia Encyclopedia Summary & Sections */}
       <WikipediaViewer wikipedia={wikipedia} />
 
-      {/* GBIF Occurrence Regions & Scientific Synonyms */}
-      <OccurrenceMap regions={regions} synonyms={synonyms} />
+      {/* GBIF Occurrence Sightings Map, Regions & Scientific Synonyms */}
+      <OccurrenceMap regions={regions} coordinates={coordinates} synonyms={synonyms} commonName={common_name} />
 
       {/* Image Modal */}
       {isImageModalOpen && wikiImage && (
