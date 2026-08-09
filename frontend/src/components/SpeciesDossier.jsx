@@ -19,6 +19,7 @@ import ConfidenceMeter from './ConfidenceMeter';
 import WikipediaViewer from './WikipediaViewer';
 import OccurrenceMap from './OccurrenceMap';
 import ExplainabilityViewer from './ExplainabilityViewer';
+import ConservationBadge from './ConservationBadge';
 
 const CATEGORY_META = [
   { id: 'Bird', label: 'Bird', sub: 'HuggingFace ViT', icon: <Bird size={14} /> },
@@ -55,6 +56,7 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
     all_category_scores,
     model_scores,
     explainability,
+    iucn_status,
     taxonomy,
     regions,
     coordinates,
@@ -184,6 +186,12 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
               </span>
             )}
 
+            {iucn_status && iucn_status.code && (
+              <span className="badge-category" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                <span>IUCN: {iucn_status.code}</span>
+              </span>
+            )}
+
             {cached ? (
               <span className="badge-cache" title={`Cached from SQLite on ${cached_at || 'previous session'}`}>
                 <Database size={12} />
@@ -209,6 +217,11 @@ export default function SpeciesDossier({ data, onReidentifyWithCategory, hasUplo
           )}
         </div>
       </div>
+
+      {/* IUCN Red List Conservation Status Banner */}
+      {iucn_status && (
+        <ConservationBadge iucnStatus={iucn_status} />
+      )}
 
       {/* AI Visual Explainability (Grad-CAM Attention Heatmap) */}
       {explainability && (

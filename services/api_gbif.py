@@ -86,11 +86,32 @@ def get_species_info(species_name):
             if syn.get("scientificName")
         ]
 
+        # Step 6: Get official IUCN Red List conservation status
+        iucn_status = None
+        try:
+            iucn_url = f"https://api.gbif.org/v1/species/{usage_key}/iucnRedListCategory"
+            iucn_resp = requests.get(iucn_url, timeout=8)
+            if iucn_resp.status_code == 200:
+                iucn_json = iucn_resp.json()
+                code = iucn_json.get("code")
+                category_name = iucn_json.get("category")
+                taxon_id = iucn_json.get("iucnTaxonID")
+                if code or category_name:
+                    iucn_status = {
+                        "code": code,
+                        "category": category_name,
+                        "iucn_taxon_id": str(taxon_id) if taxon_id else None,
+                        "iucn_url": f"https://www.iucnredlist.org/species/{taxon_id}" if taxon_id else None
+                    }
+        except Exception as ie:
+            print(f"[GBIF IUCN ERROR] {ie}")
+
         return {
             "taxonomy": taxonomy,
             "regions": regions,
             "coordinates": coordinates,
-            "synonyms": synonyms
+            "synonyms": synonyms,
+            "iucn_status": iucn_status
         }
 
     except Exception as e:
@@ -99,5 +120,6 @@ def get_species_info(species_name):
             "regions": [],
             "coordinates": [],
             "synonyms": [],
+            "iucn_status": None,
             "error": str(e)
         }

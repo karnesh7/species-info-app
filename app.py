@@ -372,7 +372,8 @@ with col_output:
                 "synonyms": gbif_info.get("synonyms", []),
                 "habitats": [],
                 "extra_info": {},
-                "wikipedia": wiki_info
+                "wikipedia": wiki_info,
+                "iucn_status": gbif_info.get("iucn_status")
             }
             insert_into_cache(payload)
             species_data = payload
@@ -387,6 +388,7 @@ with col_output:
 
         # Hero Header Card
         wiki_image = species_data.get("wikipedia", {}).get("image")
+        iucn = species_data.get("iucn_status")
         
         col_img, col_info = st.columns([1, 1.5], gap="medium")
         with col_img:
@@ -405,6 +407,9 @@ with col_output:
                 badge_html += f"<span class='custom-badge'>🏷️ {category or species_data.get('category')}</span>"
             if category_confidence:
                 badge_html += f"<span class='custom-badge'>🎯 Conf: {int(category_confidence*100)}%</span>"
+            if iucn and iucn.get("code"):
+                iucn_code = iucn.get("code")
+                badge_html += f"<span class='custom-badge' style='background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3);'>🛡️ IUCN: {iucn_code}</span>"
             if is_cached:
                 badge_html += f"<span class='custom-badge cache-badge'>⚡ SQLite Cached</span>"
             else:
@@ -413,6 +418,24 @@ with col_output:
 
             if is_cached and species_data.get("cached_at"):
                 st.caption(f"Cached on: {species_data.get('cached_at')}")
+
+        # IUCN Conservation Banner
+        if iucn and (iucn.get("code") or iucn.get("category")):
+            code = iucn.get("code", "")
+            cat_name = iucn.get("category", "")
+            url = iucn.get("iucn_url")
+            color = "#ef4444" if code in ["CR", "EN"] else ("#f59e0b" if code in ["VU", "NT"] else "#10b981")
+            url_link = f" — <a href='{url}' target='_blank' style='color: #38bdf8;'>View IUCN Dossier ↗</a>" if url else ""
+            st.markdown(f"""
+            <div style="background: rgba(255, 255, 255, 0.03); border-left: 4px solid {color}; padding: 0.75rem 1rem; border-radius: 8px; margin: 1rem 0;">
+                <div style="font-weight: 700; color: {color}; font-size: 0.95rem;">
+                    🛡️ IUCN Red List: {cat_name} ({code})
+                </div>
+                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">
+                    Official Global Biodiversity Threat Assessment{url_link}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         # Top Model Predictions Bar
         if model_scores:

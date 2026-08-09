@@ -35,6 +35,12 @@ class OccurrencePoint(BaseModel):
     year: Optional[int] = None
     locality: Optional[str] = None
 
+class IUCNStatus(BaseModel):
+    code: Optional[str] = None
+    category: Optional[str] = None
+    iucn_taxon_id: Optional[str] = None
+    iucn_url: Optional[str] = None
+
 class SpeciesDetailResponse(BaseModel):
     common_name: str
     scientific_name: str
@@ -47,6 +53,7 @@ class SpeciesDetailResponse(BaseModel):
     all_category_scores: List[CategoryScore] = []
     model_scores: List[ModelScore] = []
     explainability: Optional[ExplainabilityInfo] = None
+    iucn_status: Optional[IUCNStatus] = None
     taxonomy: Dict[str, Any] = {}
     regions: List[str] = []
     coordinates: List[OccurrencePoint] = []

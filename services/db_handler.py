@@ -18,16 +18,22 @@ def init_db(db_path="db/species_cache.db"):
         extra_info_json TEXT,
         wikipedia_json TEXT,
         cached_at TEXT,
-        coordinates_json TEXT
+        coordinates_json TEXT,
+        iucn_json TEXT
     )
     ''')
 
-    # Migration check: add coordinates_json if missing in existing DB
+    # Migration check: add new columns if missing in existing DB
     c.execute("PRAGMA table_info(species_cache)")
     columns = [col[1] for col in c.fetchall()]
     if "coordinates_json" not in columns:
         try:
             c.execute("ALTER TABLE species_cache ADD COLUMN coordinates_json TEXT")
+        except Exception:
+            pass
+    if "iucn_json" not in columns:
+        try:
+            c.execute("ALTER TABLE species_cache ADD COLUMN iucn_json TEXT")
         except Exception:
             pass
 
@@ -50,6 +56,13 @@ def fetch_from_cache(scientific_name, db_path="db/species_cache.db"):
             except Exception:
                 coords = []
 
+        iucn_data = None
+        if len(row) > 12 and row[12]:
+            try:
+                iucn_data = json.loads(row[12])
+            except Exception:
+                iucn_data = None
+
         return {
             "scientific_name": row[1],
             "common_name": row[2],
@@ -61,7 +74,8 @@ def fetch_from_cache(scientific_name, db_path="db/species_cache.db"):
             "extra_info": json.loads(row[8]) if row[8] else {},
             "wikipedia": json.loads(row[9]) if row[9] else {},
             "cached_at": row[10],
-            "coordinates": coords
+            "coordinates": coords,
+            "iucn_status": iucn_data
         }
 
     return None
@@ -72,8 +86,8 @@ def insert_into_cache(data, db_path="db/species_cache.db"):
     c = conn.cursor()
     c.execute('''
     INSERT INTO species_cache 
-    (scientific_name, common_name, category, taxonomy_json, regions_json, synonyms_json, habitats_json, extra_info_json, wikipedia_json, cached_at, coordinates_json) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (scientific_name, common_name, category, taxonomy_json, regions_json, synonyms_json, habitats_json, extra_info_json, wikipedia_json, cached_at, coordinates_json, iucn_json) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         data.get("scientific_name"),
         data.get("common_name"),
@@ -85,9 +99,9 @@ def insert_into_cache(data, db_path="db/species_cache.db"):
         json.dumps(data.get("extra_info", {})),
         json.dumps(data.get("wikipedia", {})),
         datetime.now().isoformat(),
-        json.dumps(data.get("coordinates", []))
+        json.dumps(data.get("coordinates", [])),
+        json.dumps(data.get("iucn_status"))
     ))
 
     conn.commit()
     conn.close()
-

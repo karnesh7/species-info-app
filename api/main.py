@@ -22,6 +22,7 @@ from api.schemas import (
     SpeciesDetailResponse,
     WikipediaInfo,
     ExplainabilityInfo,
+    IUCNStatus,
     ModelScore,
     SampleSpeciesItem,
     HistoryItem,
@@ -129,7 +130,8 @@ def fetch_or_enrich_species(scientific_name: str, common_name: Optional[str] = N
         "synonyms": gbif_info.get("synonyms", []),
         "habitats": [],
         "extra_info": {},
-        "wikipedia": wiki_info
+        "wikipedia": wiki_info,
+        "iucn_status": gbif_info.get("iucn_status")
     }
 
     try:
@@ -230,6 +232,7 @@ async def get_species_by_name(species_name: str):
         coordinates=data.get("coordinates", []),
         synonyms=data.get("synonyms", []),
         habitats=data.get("habitats", []),
+        iucn_status=data.get("iucn_status"),
         wikipedia=wikipedia_obj,
         cached=data.get("cached", False),
         cached_at=data.get("cached_at"),
@@ -408,6 +411,7 @@ async def identify_species(
         coordinates=data.get("coordinates", []),
         synonyms=data.get("synonyms", []),
         habitats=data.get("habitats", []),
+        iucn_status=data.get("iucn_status"),
         wikipedia=wikipedia_obj,
         cached=data.get("cached", False),
         cached_at=data.get("cached_at"),

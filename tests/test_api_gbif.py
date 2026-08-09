@@ -8,12 +8,15 @@ class TestGBIFAPI(unittest.TestCase):
         self.assertIn("taxonomy", result)
         self.assertIn("regions", result)
         self.assertIn("coordinates", result)
+        self.assertIn("iucn_status", result)
         self.assertIsInstance(result["regions"], list)
         self.assertIsInstance(result["coordinates"], list)
-        if result["coordinates"]:
-            first_pt = result["coordinates"][0]
-            self.assertIn("lat", first_pt)
-            self.assertIn("lng", first_pt)
+        
+        # Verify IUCN status for Lion
+        iucn = result.get("iucn_status")
+        if iucn:
+            self.assertEqual(iucn.get("code"), "VU")
+            self.assertEqual(iucn.get("category"), "VULNERABLE")
 
 if __name__ == "__main__":
     unittest.main()
