@@ -197,3 +197,22 @@ cython_debug/
 /models/hf_cache/*
 # But keep the folder itself by allowing a placeholder file
 !models/hf_cache/.gitkeep
+
+# Node / Frontend dependencies & builds
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local SQLite databases
+db/*.db
+*.db
+*.sqlite3
+!db/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db
