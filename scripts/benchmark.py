@@ -225,13 +225,17 @@ def run_benchmarks():
         print(f"  - GET /api/samples: {results['metrics']['fastapi_endpoints_latency_ms']['api_samples_mean_ms']} ms")
 
     # -------------------------------------------------------------
-    # Save Results to Files
+    # Save Results to Files (benchmarks/ directory)
     # -------------------------------------------------------------
-    json_path = "benchmark_results.json"
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    output_dir = os.path.join(project_root, "benchmarks")
+    os.makedirs(output_dir, exist_ok=True)
+
+    json_path = os.path.join(output_dir, "benchmark_results.json")
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    md_path = "benchmark_results.md"
+    md_path = os.path.join(output_dir, "benchmark_results.md")
     md_content = f"""# FaunaFlora AI — Quantitative Benchmark Report
 
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}  

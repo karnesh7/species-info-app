@@ -341,7 +341,7 @@ python scripts/benchmark.py
 | **FastAPI Gateway** | `GET /api/health` | `~3.4 - 5.0 ms` | Asynchronous ASGI response |
 | **FastAPI Gateway** | `GET /api/samples` | `~2.6 ms` | Asynchronous ASGI response |
 
-> 📁 Full benchmark results are saved automatically to [benchmark_results.json](file:///d:/Projects/Species%20Identification/species-info-app/benchmark_results.json) and [benchmark_results.md](file:///d:/Projects/Species%20Identification/species-info-app/benchmark_results.md).
+> 📁 Full benchmark results are saved automatically to [benchmarks/benchmark_results.json](benchmarks/benchmark_results.json) and [benchmarks/benchmark_results.md](benchmarks/benchmark_results.md).
 
 ---
 
