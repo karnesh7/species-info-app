@@ -215,4 +215,7 @@ db/*.db
 
 # OS generated files
 .DS_Store
-Thumbs.db
+Thumbs.db
+
+# Personal notes
+notes/
