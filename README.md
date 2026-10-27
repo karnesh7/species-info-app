@@ -1,243 +1,183 @@
-# FaunaFlora AI — Species Identification & Biodiversity Intelligence System
+# FaunaFlora AI - Species Identification & Biodiversity Intelligence System
 
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React 18](https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite_5-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Leaflet](https://img.shields.io/badge/Leaflet-19.4-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
+[![Leaflet](https://img.shields.io/badge/Leaflet-1.9.4-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
 [![SQLite](https://img.shields.io/badge/SQLite3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 An intelligent, full-stack biodiversity platform that identifies biological species from photographs or text queries. The system combines a **hierarchical multi-stage ML pipeline**, visual explainability (**Grad-CAM**), geospatial observation mapping (**GBIF + Leaflet**), official **IUCN Red List** conservation ratings, and encyclopedic knowledge enrichment.
 
-The application offers both a modern **React + Vite** web interface and an updated standalone **Streamlit** dashboard, powered by an asynchronous **FastAPI** backend.
+---
+
+## 🎯 1. Problem Statement & Core Value Proposition
+
+### Why Naive Species Identification Fails
+Standard computer vision and nature recognition apps suffer from key architectural and biological failure modes:
+1. **Flat 10,000+ Class Imbalance & Memory Bloat:** Training a single monolithic model across millions of living taxa causes catastrophic forgetting, poor generalization on rare species, and huge memory footprints that cannot run on modest servers.
+2. **Black-Box Trust Deficit:** In ecological surveys and wildlife science, researchers cannot trust a raw classification label without knowing whether the neural network focused on authentic anatomical field marks (beaks, plumage patterns, leaf veins) or background noise (grass, sky).
+3. **Vernacular Name Ambiguity:** Common names vary wildly across regions (e.g., "Robin" refers to *Turdus migratorius* in the Americas but *Erithacus rubecula* in Europe), causing data errors without binomial scientific nomenclature (*Genus species*).
+4. **Multi-Source Network Latency & Rate Limits:** Querying separate external systems sequentially for taxonomy (GBIF), common names (iNaturalist), threat status (IUCN), and natural history (Wikipedia) introduces 2–3s delays and rate-limit errors.
+
+### Core Value Proposition
+FaunaFlora AI resolves these limitations through a **two-stage coarse-to-fine router** (a lightweight local PyTorch EfficientNet-B0 model triages specimens in ~116ms to domain specialists), **native PyTorch Grad-CAM visual heatmaps**, **multi-source API normalization**, and an **embedded SQLite cache delivering $<2\text{ms}$ lookups** (**1,196x speedup**).
 
 ---
 
-## 🌟 How It Works: Pipeline Architecture
+## 🌟 2. Key Features & Visual Walkthrough
+
+| 📸 Specimen Upload & Camera Dropzone | 🛡️ IUCN Status & Grad-CAM Heatmap |
+| :---: | :---: |
+| <img src="screenshots/01-specimen-upload.png" width="480" alt="Specimen Upload & Camera Dropzone Interface" /> | <img src="screenshots/03-iucn-threat-gradcam.png" width="480" alt="IUCN Red List Spectrum & Grad-CAM Visual Heatmap" /> |
+| *Drag-and-drop dropzone, live device camera, and 1-click sample chips* | *Official 9-tier IUCN threat spectrum meter with Grad-CAM visual attention* |
+
+<p align="center">
+  <img src="screenshots/05-species-dossier-map.png" width="720" alt="Species Dossier & Interactive Leaflet Sightings Map" /><br/>
+  <em>Interactive dark-mode Leaflet GIS world sightings map and comprehensive biological field dossier</em>
+</p>
+
+<details>
+<summary>📸 <strong>Click to view remaining interface workflows (Triage Probabilities, Classification Tree, & Research Dashboard)</strong></summary>
+
+| 🧬 Broad Category Triage Probabilities | 🌳 Taxonomic Hierarchy Tree |
+| :---: | :---: |
+| <img src="screenshots/02-broad-category-triage.png" width="480" alt="Broad Category Triage Classification" /> | <img src="screenshots/04-taxonomic-hierarchy.png" width="480" alt="Biological Classification Hierarchy Tree" /> |
+| *6-class coarse triage probabilities with low-confidence override* | *7-rank taxonomic classification tree from Kingdom to Species* |
+
+<p align="center">
+  <img src="screenshots/06-research-dashboard.png" width="720" alt="Streamlit Research Dashboard" /><br/>
+  <em>Alternative standalone Streamlit research dashboard with query history drawer</em>
+</p>
+</details>
+
+* **Hierarchical Coarse-to-Fine Identification:** Sub-120ms local PyTorch triage routes specimens to specialized downstream models (Bird Vision Transformers, Pl@ntNet Botany API, or General Wildlife ViT).
+* **Native Visual Explainability (Grad-CAM):** Dynamic heatmap slider blends class activation maps over raw photographs, visually verifying model focus on authentic anatomical features.
+* **Geospatial GIS Observation Mapping:** Interactive Leaflet dark map rendering live georeferenced observation coordinates from GBIF.
+* **IUCN Red List Conservation Spectrum:** 9-tier visual extinction risk meter linking directly to global species assessments.
+* **1-Click Field Dossier Export:** Instant formatted Markdown field reports and print-optimized PDF generation.
+* **Persistent SQLite Caching:** Local cache-aside layer delivering $<2\text{ms}$ response times on repeated queries.
+
+---
+
+## 🏗️ 3. System Architecture & Request Lifecycle
 
 ```
-                          [Specimen Image / Species Name]
-                                         │
-                                         ▼
-                         ┌───────────────────────────────┐
-                         │  Stage 1: Broad Categorizer   │  <-- PyTorch EfficientNet-B0
-                         │ (Bird, Plant, Mammal, Insect, │      Fast coarse triage (~15ms)
-                         │   Fish, Reptile/Amphibian)    │
-                         └───────────────┬───────────────┘
-                                         │
-                    ┌────────────────────┼────────────────────┐
-                    ▼                    ▼                    ▼
-           ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-           │   Bird ViT       │ │   Pl@ntNet API   │ │   General ViT    │
-           │ (HuggingFace)    │ │ (Botany Expert)  │ │ (Vision Transf.) │
-           └────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
-                    │                    │                    │
-                    └────────────────────┼────────────────────┘
-                                         │
-                                         ▼
-                         ┌───────────────────────────────┐
-                         │  Stage 3: Taxon Normalization │  <-- iNaturalist API
-                         │   (Common ⟷ Scientific Name) │
-                         └───────────────┬───────────────┘
-                                         │
-                                         ▼
-                         ┌───────────────────────────────┐
-                         │    Multi-Tier SQLite Cache    │  <-- <5ms cached response
-                         │     (db/species_cache.db)     │
-                         └───────┬───────────────┬───────┘
-                           HIT   │               │ MISS
-                                 │               ▼
-                                 │    ┌──────────────────────────┐
-                                 │    │ GBIF Taxonomy & Regions  │
-                                 │    │ GBIF Sighting Coords     │
-                                 │    │ IUCN Red List Status     │
-                                 │    │ Wikipedia Encyclopedia   │
-                                 │    └──────────┬───────────────┘
-                                 │               │
-                                 └───────┬───────┘
-                                         │
-                                         ▼
-                         ┌───────────────────────────────┐
-                         │      Biological Dossier       │
-                         │  • Taxonomy Hierarchy Tree    │
-                         │  • Grad-CAM Visual Heatmap    │
-                         │  • Interactive Sighting Map   │
-                         │  • IUCN Conservation Status   │
-                         │  • Field Dossier (.md / .pdf) │
-                         └───────────────────────────────┘
+                      [Specimen Image / Species Name]
+                                     │
+                                     ▼
+                     ┌───────────────────────────────┐
+                     │  Stage 1: Broad Categorizer   │  <-- PyTorch EfficientNet-B0
+                     │ (Bird, Plant, Mammal, Insect, │      Fast coarse triage (~116ms)
+                     │   Fish, Reptile/Amphibian)    │
+                     └───────────────┬───────────────┘
+                                     │
+                ┌────────────────────┼────────────────────┐
+                ▼                    ▼                    ▼
+       ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
+       │   Bird ViT       │ │   Pl@ntNet API   │ │   General ViT    │
+       │ (HuggingFace)    │ │ (Botany Expert)  │ │ (Vision Transf.) │
+       └────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
+                │                    │                    │
+                └────────────────────┼────────────────────┘
+                                     │
+                                     ▼
+                     ┌───────────────────────────────┐
+                     │ Stage 2: Visual Explainability│  <-- Native PyTorch Grad-CAM
+                     │ (Grad-CAM on model.conv_head) │      Turbo colormap blend
+                     └───────────────┬───────────────┘
+                                     │
+                                     ▼
+                     ┌───────────────────────────────┐
+                     │  Stage 3: Taxon Normalization │  <-- iNaturalist API
+                     │   (Common ⟷ Scientific Name) │
+                     └───────────────┬───────────────┘
+                                     │
+                                     ▼
+                     ┌───────────────────────────────┐
+                     │    Multi-Tier SQLite Cache    │  <-- <2ms cached response
+                     │     (db/species_cache.db)     │
+                     └───────┬───────────────┬───────┘
+                       HIT   │               │ MISS
+                             │               ▼
+                             │    ┌──────────────────────────┐
+                             │    │ GBIF Taxonomy & Regions  │
+                             │    │ GBIF Sighting Coords     │
+                             │    │ IUCN Red List Status     │
+                             │    │ Wikipedia Encyclopedia   │
+                             │    └──────────┬───────────────┘
+                             │               │
+                             └───────┬───────┘
+                                     │
+                                     ▼
+                     ┌───────────────────────────────┐
+                     │      Biological Dossier       │
+                     │  • Taxonomy Hierarchy Tree    │
+                     │  • Grad-CAM Visual Heatmap    │
+                     │  • Interactive Sighting Map   │
+                     │  • IUCN Conservation Status   │
+                     │  • Field Dossier (.md / .pdf) │
+                     └───────────────────────────────┘
 ```
 
 ---
 
-## 🌿 Core Features
+## ⚡ 4. Key Highlights & Benchmarked Performance
 
-### 1. 🔍 Multi-Stage Species Identification
-* **Hierarchical Coarse-to-Fine Routing**: Rather than relying on a single generic model, the system first triages specimens across **6 broad biological categories** using a local PyTorch EfficientNet model, then dispatches the image to domain-specialist models:
-  * **Birds**: HuggingFace Vision Transformer (`chriamue/bird-species-classifier`).
-  * **Plants & Flora**: Pl@ntNet Botanical Identification API.
-  * **Mammals, Insects, Fish, Reptiles & Amphibians**: General Vision Transformer (`google/vit-base-patch16-224`).
-* **Manual Category Override**: If a photo is noisy or low-confidence, users can manually select the broad category to route the specimen directly to the appropriate specialist model.
-* **Low-Confidence Warning System**: Automatically alerts users when prediction scores fall below confidence thresholds, encouraging careful verification.
+Measured under `Python 3.11` on standard CPU hardware via the automated benchmark suite (`scripts/benchmark.py`):
 
-### 2. 🧬 Taxonomic Classification & Biological Hierarchy
-* **GBIF Backbone Integration**: Ingests complete biological taxonomic trees from Kingdom down to Species:
-  $$\text{Kingdom} \longrightarrow \text{Phylum} \longrightarrow \text{Class} \longrightarrow \text{Order} \longrightarrow \text{Family} \longrightarrow \text{Genus} \longrightarrow \text{Species}$$
-* **Name Resolution via iNaturalist**: Bidirectionally maps vernacular/common names to valid binomial scientific names (and vice versa).
-
-### 3. 📖 Natural History & Encyclopedic Knowledge
-* **Structured Wikipedia Extraction**: Parses encyclopedic summaries and dedicated structured sections for:
-  * **Diet & Foraging**: Nutritional behavior and prey preferences.
-  * **Habitat & Distribution**: Biomes, geographical range, and ecological niche.
-  * **Physical Description**: Size, coloration, morphology, and distinguishing field marks.
-  * **Behavior & Social Structure**: Mating, territoriality, and diurnal/nocturnal habits.
-* **Scientific Synonyms & Known Aliases**: Lists historical scientific names and taxonomic synonyms.
-
-### 4. 🧠 Visual Model Explainability (Grad-CAM)
-* **PyTorch Activation Mapping**: Hooks into `model.conv_head` during backpropagation to generate a gradient-weighted class activation map.
-* **Interactive Heatmap Inspector**: Allows users to dynamically slide between the original specimen photo, the blended Turbo colormap, and the raw attention mask, visually verifying that the model focused on authentic biological features (e.g. beak, wing markings, leaf venation) rather than background artifacts.
-
-### 5. 🌍 Interactive Global Sightings Map
-* **GBIF Georeferenced Coordinates**: Queries live observation records with latitude, longitude, country, locality, and sighting year.
-* **Leaflet Dark-Mode GIS Map**: Renders glowing observation points across the globe with interactive popups detailing individual sightings.
-
-### 6. 🛡️ Live IUCN Red List Conservation Status
-* **Global Threat Ratings**: Ingests official IUCN categories (`Extinct`, `Critically Endangered`, `Endangered`, `Vulnerable`, `Near Threatened`, `Least Concern`, `Data Deficient`).
-* **Visual Conservation Spectrum**: Displays an interactive 7-tier spectrum meter highlighting the specimen's threat classification with direct links to official IUCN assessment dossiers.
-
-### 7. 📄 Export Specimen Field Dossier (PDF & Markdown)
-* **1-Click Markdown Download**: Downloads a formatted `.md` field report containing taxonomy tables, IUCN rating, model confidence scores, occurrence regions, and encyclopedia summaries.
-* **Print / Save as PDF**: Print-optimized stylesheet that formats a clean biological field sheet ready for PDF export via `window.print()`.
-* **Clipboard Sync**: Instantly copies formatted Markdown notes to the clipboard.
-
-### 8. ⚡ High-Performance Caching & Dual Interfaces
-* **Persistent SQLite Caching**: Caches full species dossiers, taxonomy trees, coordinates, and IUCN statuses locally, delivering $<5\text{ms}$ lookups on repeated queries.
-* **Modern React + Vite Web App**: Dark-forest glassmorphism UI with live specimen dropzone, device camera capture, and 5-stage animated pipeline stepper.
-* **Updated Streamlit Dashboard**: Standalone dashboard with quick specimen showcase buttons and SQLite history explorer.
-
----
-
-## 🧑‍💻 Technology Stack
-
-| Layer | Technologies | Purpose & Role |
-| :--- | :--- | :--- |
-| **Frontend UI** | React 18, Vite 5, Leaflet, Lucide Icons | Responsive glassmorphic web interface, interactive GIS mapping, and fast build times. |
-| **Backend REST API** | FastAPI, Uvicorn, Pydantic v2 | High-performance asynchronous REST endpoints with automated OpenAPI/Swagger specs. |
-| **Machine Learning** | PyTorch, Torchvision, HuggingFace Transformers | Local EfficientNet-B0 broad triage model and cloud Vision Transformers. |
-| **Explainable AI (XAI)** | PyTorch Hooks + NumPy Turbo Colormap | Native Grad-CAM visual explainability heatmap engine without external dependencies. |
-| **Biodiversity APIs** | GBIF Backbone, iNaturalist, IUCN Red List, Wikipedia API | Real-time biological data fusion for taxonomy, coordinates, threat status, and natural history. |
-| **Data Storage / Cache** | SQLite3 (JSON-serialized storage) | Local persistence layer for instantaneous $<5\text{ms}$ cached lookups and offline retrieval. |
-| **Alternative UI** | Streamlit | Standalone, lightweight data dashboard for quick local execution (`app.py`). |
-
----
-
-## 📡 REST API Reference
-
-The FastAPI backend exposes the following REST endpoints:
-
-| Method | Endpoint | Description | Parameters / Payload |
+| Component / Layer | Metric | Measured Value | Operational Rationale |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/identify` | Multi-stage image/text identification & enrichment | `image` (UploadFile, opt), `species_name` (Form, opt), `category_override` (Form, opt) |
-| `GET` | `/api/species/{name}` | Direct taxonomy & encyclopedia lookup (cache-checked) | `name` (Path param: scientific or common name) |
-| `GET` | `/api/species/{name}/export` | Download formatted Markdown field dossier | `name` (Path param) $\rightarrow$ returns `.md` file attachment |
-| `GET` | `/api/samples` | Curated showcase specimens for 1-click exploration | Returns list with images, categories, and descriptions |
-| `GET` | `/api/history` | Recent cached queries from SQLite database | `limit` (Query param, default: 20) |
-| `GET` | `/api/health` | Service and database connectivity health check | Returns status and database integrity |
-
-> 📖 **Interactive Swagger Documentation**: Explore and test all endpoints live at `http://localhost:8000/docs`
-
----
-
-## 🧠 Local Classifier Details
-
-* **Model Architecture**: Fine-tuned **EfficientNet-B0** exported as a standalone PyTorch `.pt` model.
-* **Classes (6)**: `Bird`, `Fish`, `Insect`, `Mammal`, `Plant`, `Reptile_Amphibian`.
-* **Accuracy & Latency**: **~96%** validation accuracy with sub-20ms CPU inference time.
-* **Google Colab Notebook**: 📓 [Train Classifier on Google Colab](https://colab.research.google.com/github/karnesh7/species-info-app/blob/main/notebooks/train_classifier.ipynb)
+| **Model Footprint** | Checkpoint Size | **`15.66 MB`** | Standalone PyTorch `.pt` model; zero external cloud dependencies |
+| **Model Parameters** | Total Weights | **`4,015,234`** | Compact 4.02M-parameter EfficientNet-B0 architecture |
+| **PyTorch Triage (CPU)**| P50 Median Latency | **`116.94 ms`** | Sub-120ms initial category routing on standard CPU |
+| **PyTorch Triage (CPU)**| Mean Latency | **`162.25 ms`** | Evaluated across 50 consecutive benchmark iterations |
+| **Grad-CAM XAI** | Heatmap Generation | **`788.67 ms`** | Backpropagation hooks on `model.conv_head` + Turbo colormap |
+| **SQLite Cache Retrieval**| Read Latency | **`1.546 ms`** | Instant local retrieval from persistent JSON store |
+| **Cache Acceleration**| Speedup Factor | **`1,196.7x ⚡`** | Compared to ~1,850ms sequential live external API calls |
+| **Field Dossier Gen** | Generation Time | **`0.0505 ms`** | High-throughput export (>19,800 dossiers/second) |
+| **FastAPI Health Gateway**| Latency (`/health`)| **`3.41 ms`** | Asynchronous ASGI request turnaround |
+| **FastAPI Samples** | Latency (`/samples`) | **`2.62 ms`** | Instant showcase data response |
 
 ---
 
-## 🛠️ Installation & Setup
+## 🚀 5. Tech Stack & Engineering Rationale
 
-### 1. Prerequisites
-* **Python 3.10+** (tested on Python 3.11)
-* **Node.js 18+** and **npm**
-
-### 2. Clone & Virtual Environment Setup
-
-```bash
-git clone https://github.com/karnesh7/species-info-app.git
-cd species-info-app
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# Windows:
-.\venv\Scripts\activate
-# macOS / Linux:
-source venv/bin/activate
-
-# Install Python dependencies
-pip install -r requirements.txt
-```
-
-### 3. Configure Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-PLANTNET_API_KEY=your_plantnet_api_key_here
-HF_TOKEN=your_huggingface_token_here
-```
+| Layer | Technology | Version | Engineering Rationale |
+| :--- | :--- | :--- | :--- |
+| **Frontend UI** | React | `18.2.0` | Declarative component state management and glassmorphic modal drawers |
+| **Build Tool & Bundler** | Vite | `^5.1.6` | Sub-second Hot Module Replacement (HMR) and optimized production bundles |
+| **Geospatial GIS** | Leaflet | `1.9.4` | Lightweight interactive dark world maps with georeferenced specimen markers |
+| **Icons & Design** | Lucide React / CSS3 | `0.344.0` | Custom glassmorphic dark-forest design tokens, blur filters, and SVG icons |
+| **Backend REST Gateway**| FastAPI | `>= 0.110.0` | Asynchronous ASGI REST endpoints, non-blocking I/O, and auto Swagger docs |
+| **ASGI Server** | Uvicorn | `>= 0.28.0` | High-throughput asynchronous event loop server executing Python coroutines |
+| **Data Validation** | Pydantic | `v2.x` | Strict type coercion and automated OpenAPI schema generation |
+| **Machine Learning** | PyTorch | `2.x` | Native forward/backward hooks for Grad-CAM explainability and CPU inference |
+| **Model Architecture** | EfficientNet-B0 | Fine-tuned | Compact 4.02M-parameter neural network providing sub-120ms coarse triage |
+| **Computer Vision** | HuggingFace Transformers | `4.x` | Domain-specialist Vision Transformers for fine-grained bird and animal species |
+| **Botanical Vision** | Pl@ntNet API | `v2` | Specialized external botanical identification engine for flora specimens |
+| **Taxon Normalization**| iNaturalist API | `v1` | Bidirectional resolution between common vernacular names and scientific Latin taxa |
+| **Biodiversity Data** | GBIF Backbone API | `v1` | Global taxonomic trees, 40+ observation coordinates, and threat assessments |
+| **Persistence Cache** | SQLite3 | `3.x` | Embedded zero-dependency cache-aside storage delivering $<2\text{ms}$ reads |
+| **Alternative UI** | Streamlit | `1.32+` | Standalone single-file research dashboard for rapid data experimentation |
 
 ---
 
-## 🏃 Running the Application
+## 🏛️ 6. Key Architectural Decisions
 
-### Option A: Modern Full-Stack Web App (Recommended)
-
-**Terminal 1 — Start the FastAPI Backend:**
-```bash
-uvicorn api.main:app --reload --port 8000
-```
-> API available at: `http://localhost:8000` | Swagger Docs: `http://localhost:8000/docs`
-
-**Terminal 2 — Start the React Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-> Web interface accessible at: `http://localhost:5173`
+| ADR ID | Decision Title | Status | Context & Problem | Chosen Solution & Trade-offs |
+|:---|:---|:---:|:---|:---|
+| **ADR-01** | TFLite to PyTorch Classifier Migration | **Accepted** | TFLite caused frequent container build failures and stripped backward graphs, blocking Grad-CAM. | Migrated to PyTorch `EfficientNet-B0` (`.pt`). Native forward/backward hooks enabled Grad-CAM. Trade-off: Model size increased from 4.2MB to 15.66MB. |
+| **ADR-02** | Hierarchical Triage vs. Monolithic Model | **Accepted** | Flat 10,000+ class models suffer from severe class imbalance and catastrophic forgetting. | 2-stage architecture: Fast coarse triage (~116ms) routes to specialized expert models. Trade-off: Two sequential inference passes. |
+| **ADR-03** | Decoupling Streamlit to FastAPI + React SPA | **Accepted** | Streamlit re-executes on every click, restricting custom Leaflet GIS mapping and async API calls. | Decoupled into an asynchronous FastAPI gateway + React 18 glassmorphic web app. Trade-off: Managing two runtimes in development. |
+| **ADR-04** | SQLite Cache-Aside vs. Live Multi-API Calls | **Accepted** | Sequential calls to GBIF, iNaturalist, and Wikipedia took 2–3s and hit rate limits. | Persistent SQLite cache-aside store (`species_cache.db`) delivering **1.5ms** reads (**1,196x speedup**). Trade-off: Local disk cache storage. |
+| **ADR-05** | Local Transformers Caching vs. Cloud APIs | **Accepted** | Cloud inference APIs caused 20s+ cold starts and required paid API subscriptions. | Locally cached HuggingFace Vision Transformers in `models/hf_cache/` with singleton lazy loading. Trade-off: Requires ~340MB local disk space. |
 
 ---
 
-### Option B: Production Single-Server Bundle
-
-Build the React frontend and serve everything directly from FastAPI on a single port:
-
-```bash
-cd frontend
-npm run build
-cd ..
-uvicorn api.main:app --port 8000
-```
-> Full-Stack application running at: `http://localhost:8000`
-
----
-
-### Option C: Standalone Streamlit Dashboard
-
-```bash
-streamlit run app.py
-```
-> Streamlit interface running at: `http://localhost:8501`
-
----
-
-## 📁 Project Structure
+## 📁 7. Repository & Codebase Structure
 
 ```
 species-info-app/
@@ -245,106 +185,138 @@ species-info-app/
 │   ├── __init__.py
 │   ├── main.py                       # REST routes, CORS, static mounting & export
 │   └── schemas.py                    # Pydantic v2 validation models
-│
-├── frontend/                         # Modern React + Vite Frontend
-│   ├── index.html                    # HTML entry with Google Fonts & Leaflet CSS
-│   ├── vite.config.js                # Vite configuration with /api proxy
+├── frontend/                         # Modern React 18 + Vite Frontend
+│   ├── src/
+│   │   ├── components/               # UI components (Dropzone, Map, XAI Viewer, Dossier)
+│   │   ├── App.jsx                   # Central application state & pipeline controller
+│   │   └── index.css                 # Glassmorphic dark-forest design system
 │   ├── package.json
-│   └── src/
-│       ├── App.jsx                   # Central application state & pipeline controller
-│       ├── index.css                 # Glassmorphic nature design system
-│       └── components/
-│           ├── Header.jsx            # Top navbar & Swagger doc link
-│           ├── SampleChips.jsx       # 1-click exploration showcase
-│           ├── Dropzone.jsx          # Drag-and-drop & device camera input
-│           ├── PipelineStatus.jsx    # Real-time 5-stage animated stepper
-│           ├── SpeciesDossier.jsx    # Hero species card & status badges
-│           ├── ExplainabilityViewer.jsx # Grad-CAM attention heatmap slider
-│           ├── InteractiveMap.jsx    # Leaflet dark world sightings map
-│           ├── ConservationBadge.jsx # IUCN Red List spectrum meter
-│           ├── ExportDossierModal.jsx# Markdown download & PDF print modal
-│           ├── TaxonomyTree.jsx      # Visual biological hierarchy tree
-│           ├── ConfidenceMeter.jsx   # Candidate prediction score bars
-│           ├── WikipediaViewer.jsx   # Encyclopedic accordion sections
-│           ├── OccurrenceMap.jsx     # Occurrence regions & synonyms
-│           └── HistoryModal.jsx      # SQLite query history drawer
-│
+│   └── vite.config.js                # Vite configuration with /api proxy
 ├── models/                           # PyTorch ML Models & Cache
-│   ├── broad_category_classifier_full.pt # Fine-tuned EfficientNet-B0
-│   └── hf_cache/
-│
-├── services/                         # Core Machine Learning & External APIs
+│   ├── broad_category_classifier_full.pt # Fine-tuned PyTorch EfficientNet-B0 (15.66 MB)
+│   └── hf_cache/                     # Locally cached Vision Transformer weights
+├── screenshots/                      # Application documentation screenshots
+├── scripts/                          # Benchmarking & Utilities
+│   └── benchmark.py                  # Quantitative latency, XAI & cache benchmark suite
+├── services/                         # Core Machine Learning & API Integrations
 │   ├── local_classifier.py           # PyTorch broad category classifier
 │   ├── explainability.py             # Grad-CAM activation heatmap generator
 │   ├── api_huggingface.py            # HuggingFace Vision Transformers (ViT)
 │   ├── api_plantnet.py               # Pl@ntNet Botany API integration
-│   ├── api_gbif.py                   # GBIF taxonomy, coordinates & IUCN threat ratings
+│   ├── api_gbif.py                   # GBIF taxonomy, coordinates & IUCN status
 │   ├── api_inaturalist.py            # Taxon name mapping & resolution
 │   ├── api_wikipedia.py              # Wikipedia structured section parser
-│   ├── report_generator.py           # Markdown field dossier generator
-│   └── db_handler.py                 # SQLite cache CRUD with auto-migrations
-│
+│   ├── db_handler.py                 # SQLite cache CRUD with auto-migrations
+│   └── report_generator.py           # Markdown field dossier generator
 ├── db/                               # Database Storage
 │   └── species_cache.db              # SQLite persistent cache
-│
-├── tests/                            # Automated Test Suite (9 Tests)
-│   ├── test_api_endpoints.py         # FastAPI endpoint integration tests
-│   ├── test_explainability.py        # Grad-CAM heatmap generation tests
-│   ├── test_api_gbif.py              # GBIF taxonomy, GIS coordinates & IUCN tests
-│   ├── test_api_inaturalist.py       # iNaturalist name mapping tests
-│   ├── test_api_wikipedia.py         # Wikipedia encyclopedia tests
-│   └── test_report_generator.py      # Field dossier generator tests
-│
+├── tests/                            # Automated Unit Test Suite (9 Tests)
+│   ├── test_api_endpoints.py
+│   ├── test_explainability.py
+│   └── test_api_gbif.py
 ├── app.py                            # Streamlit standalone dashboard
-├── requirements.txt                  # Python dependencies
+├── requirements.txt                  # Python backend dependencies
 └── README.md
 ```
 
 ---
 
-## 🧪 Automated Testing
+## ⚙️ 8. Installation & Developer Runbook
 
-Run the full automated test suite covering ML inference, Grad-CAM generation, REST endpoints, GBIF GIS/IUCN APIs, and report generation:
+### Prerequisites
+* **Python 3.10+** (tested on Python 3.11)
+* **Node.js 18+** and **npm**
 
+### 1. Environment Setup
 ```bash
-python -m unittest discover tests
+git clone https://github.com/karnesh7/species-info-app.git
+cd species-info-app
+
+# Create and activate virtual environment
+python -m venv venv
+.\venv\Scripts\activate   # Windows
+# source venv/bin/activate  # macOS / Linux
+
+# Install backend dependencies
+pip install -r requirements.txt
 ```
 
-```
-Ran 9 tests in 26.261s
+### 2. Environment Configuration
+Create a `.env` file in the project root:
 
-OK
+| Variable | Description | Requirement |
+| :--- | :--- | :--- |
+| `PLANTNET_API_KEY` | Botanical identification API key from Pl@ntNet | Optional (falls back gracefully) |
+| `HF_TOKEN` | HuggingFace user token for downloading ViT checkpoints | Optional (public weights supported) |
+
+### 3. Launching the Application
+
+#### Option A: Full-Stack Web App (Recommended)
+```bash
+# Terminal 1: Start FastAPI Backend
+uvicorn api.main:app --reload --port 8000
+
+# Terminal 2: Start React Frontend
+cd frontend
+npm install
+npm run dev
 ```
+*Frontend runs at `http://localhost:5173` | Backend API docs at `http://localhost:8000/docs`.*
+
+#### Option B: Production Single-Server Bundle
+```bash
+cd frontend && npm run build && cd ..
+uvicorn api.main:app --port 8000
+```
+*Single server running both frontend and API at `http://localhost:8000`.*
+
+#### Option C: Standalone Streamlit Dashboard
+```bash
+streamlit run app.py
+```
+*Streamlit dashboard runs at `http://localhost:8501`.*
 
 ---
 
-## 📊 Quantitative Performance Benchmarks
+## 📡 9. API Reference
 
-Run the built-in benchmark suite to measure CPU inference latency, Grad-CAM attention generation, SQLite cache speedup, and endpoint throughput:
+All endpoints return JSON and are interactive via `/docs` (Swagger UI):
 
+| Method | Endpoint | Description | Key Parameters |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/identify` | Identifies species from photo upload or text query | `image` (UploadFile), `species_name` (Form), `category_override` (Form) |
+| `GET` | `/api/species/{name}` | Direct taxonomy, sightings, and encyclopedia lookup | `name` (Common or scientific Latin name) |
+| `GET` | `/api/species/{name}/export` | Download formatted Markdown field dossier | `name` (Returns `.md` file attachment) |
+| `GET` | `/api/samples` | Curated showcase specimens for 1-click exploration | None |
+| `GET` | `/api/history` | List recent cached queries from SQLite database | `limit` (Query param, default: 20) |
+| `GET` | `/api/health` | Service, model checkpoint, and database health check | None |
+
+---
+
+## 🧪 10. Automated Testing & Verification
+
+### Run Automated Unit Test Suite
+```bash
+python -m unittest discover tests -v
+```
+*Executes 9 automated unit tests verifying FastAPI routes, Grad-CAM backprop hooks, GBIF GIS/IUCN queries, iNaturalist resolution, and field dossier generators.*
+
+### Run Empirical Latency & Performance Benchmarks
 ```bash
 python scripts/benchmark.py
 ```
-
-### Summary Benchmark Results (CPU)
-
-| Benchmark Component | Metric | Measured Value | Reference / Notes |
-| :--- | :--- | :--- | :--- |
-| **Model Size** | Checkpoint Size | `15.66 MB` | Standalone PyTorch `.pt` model |
-| **Parameters** | Total Weights | `4,015,234` | 4.02M Parameters (EfficientNet-B0) |
-| **PyTorch Triage** | Mean Latency | `~118 - 160 ms` | CPU inference (50 iterations) |
-| **PyTorch Triage** | Median (P50) | `~99 - 116 ms` | 50 iterations |
-| **Grad-CAM XAI** | Heatmap Generation | `~690 - 780 ms` | Gradient backprop on `conv_head` |
-| **SQLite Cache Read**| Retrieval Latency | `~0.6 - 1.5 ms` | Persistent local SQLite cache |
-| **Cache Acceleration**| Speedup Factor | **`~1200x - 2900x`** | Faster than ~1850ms live API calls |
-| **Field Report Gen** | Generation Time | `<0.05 ms` | `>19,000` dossiers/sec |
-| **FastAPI Gateway** | `GET /api/health` | `~3.4 - 5.0 ms` | Asynchronous ASGI response |
-| **FastAPI Gateway** | `GET /api/samples` | `~2.6 ms` | Asynchronous ASGI response |
-
-> 📁 Full benchmark results are saved automatically to [benchmarks/benchmark_results.json](benchmarks/benchmark_results.json) and [benchmarks/benchmark_results.md](benchmarks/benchmark_results.md).
+*Measures local PyTorch triage latency, Grad-CAM heatmap generation, and SQLite cache read acceleration, saving outputs to `benchmarks/benchmark_results.json`.*
 
 ---
 
-## 📄 License
+## 🗺️ 11. Roadmap & Engineering Directions
 
-This project is open source and available under the [MIT License](LICENSE).
+- [ ] **Audio Birdsong & Bioacoustic Identification:** Allow users to record or upload audio clips (e.g., birdsong or frog calls) to identify species by sound alongside photographs.
+- [ ] **Offline Mobile Field Mode:** Package the local triage classifier into a lightweight Progressive Web App (PWA) with cached field guides for remote, internet-free wildlife reserves.
+- [ ] **Multi-Organism Detection in Single Photos:** Detect and draw bounding boxes around multiple distinct plants or animals in a single field photo to identify each organism independently.
+
+---
+
+## 📄 12. License
+
+Distributed under the [MIT License](LICENSE).
